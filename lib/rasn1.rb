@@ -6,6 +6,7 @@ require_relative 'rasn1/types'
 require_relative 'rasn1/model'
 require_relative 'rasn1/wrapper'
 require_relative 'rasn1/tracer'
+require_relative 'rasn1/asn1_schema_parser'
 
 # Constrained types
 require_relative 'rasn1/types/visible_string'
