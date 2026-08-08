@@ -18,6 +18,27 @@ module RASN1
   #                       integer(:house, explicit: 1, default: 0)])
   #  end
   #
+  # Since 0.17.0, content may also be defined through a block. This is strictly
+  # equivalent to the +:content+ option:
+  #  class Record < RASN1::Model
+  #    sequence :record do
+  #      integer :id
+  #      integer :room, implicit: 0, optional: true
+  #      integer :house, explicit: 1, default: 0
+  #    end
+  #  end
+  # Blocks may be nested, and may use all model helpers (+#model+, +#wrapper+, +#sequence_of+, ...):
+  #  class PersonnelRecord < RASN1::Model
+  #    sequence :personnelRecord do
+  #      utf8_string :name
+  #      utf8_string :title
+  #      integer :age
+  #      boolean :employed
+  #    end
+  #  end
+  # When both +:content+ option and a block are given, block elements are appended to
+  # those defined by the option.
+  #
   # In a model, each element must have a unique name.
   #
   # === Parse a DER-encoded string
@@ -52,6 +73,13 @@ module RASN1
   #  record2[:a_record][:room] = 43
   # or like this:
   #  record2 = Record2.new(rented: true, a_record: { id: 65537, room: 43 })
+  # Same model, using a block:
+  #  class Record2 < RASN1::Model
+  #    sequence :record2 do
+  #      boolean :rented, default: false
+  #      model :a_record, Record
+  #    end
+  #  end
   #
   # == Delegation
   # {Model} may delegate some methods to its root element. Thus, if root element
@@ -102,7 +130,7 @@ module RASN1
     SEQUENCE_TYPES = [Types::Sequence, Types::SequenceOf, Types::Set, Types::SetOf].freeze
 
     # Define helper methods to define models
-    module Accel
+    module Accel # rubocop:disable Metrics/ModuleLength
       # @return [Hash]
       attr_reader :options
 
@@ -111,16 +139,56 @@ module RASN1
       # @param [Class] model_klass
       # @return [Elem]
       def model(name, model_klass)
-        @root = ModelElem.new(name, model_klass)
+        push_element(ModelElem.new(name, model_klass))
       end
 
       # Use a {Wrapper} around a {Types::Base} or a {Model} object
-      # @param [Types::Base,Model] element
-      # @param [Hash] options
+      # @overload wrapper(element, options={})
+      #  @param [Types::Base,Model] element
+      #  @param [Hash] options
+      # @overload wrapper(options={}, &block)
+      #  Define the wrapped element through a block. The block must define exactly one element.
+      #  @param [Hash] options
+      #  @yieldreturn [void]
       # @return [WrapElem]
       # @since 0.12
-      def wrapper(element, options={})
-        @root = WrapElem.new(element, options)
+      # @since 0.17.0 block form
+      def wrapper(element=nil, options={}, &block)
+        if block
+          options = element if element.is_a?(Hash)
+          element = single_element_from_block(:wrapper, &block)
+        end
+        push_element(WrapElem.new(element, options))
+      end
+
+      # @private Register +elem+ as a child of the block currently being evaluated, or as
+      #   the root element of the model when no block is being evaluated.
+      # @param [BaseElem,ModelElem,WrapElem] elem
+      # @return [BaseElem,ModelElem,WrapElem] elem
+      # @since 0.17.0
+      def push_element(elem)
+        builder = @content_builders&.last
+        if builder.nil?
+          @root = elem
+        else
+          remove_consumed_elements(builder, elem)
+          builder << elem
+        end
+        elem
+      end
+
+      # @private Evaluate +block+ and collect all elements defined by it.
+      # @return [Array<BaseElem,ModelElem,WrapElem>]
+      # @since 0.17.0
+      def capture_content(&block)
+        @content_builders ||= []
+        @content_builders << []
+        begin
+          instance_eval(&block)
+        ensure
+          content = @content_builders.pop
+        end
+        content
       end
 
       # Update options of root element.
@@ -159,14 +227,16 @@ module RASN1
       # @param [Class] klass
       # @since 0.11.0
       # @since 0.12.0 track source location on error (adfoster-r7)
+      # @since 0.17.0 accept a block to define content
       def define_type_accel_base(accel_name, klass)
         singleton_class.class_eval <<-EVAL, __FILE__, __LINE__ + 1
-          def #{accel_name}(name, options={}) # def sequence(name, type, options)
+          def #{accel_name}(name, options={}, &block) # def sequence(name, type, options, &block)
             options[:name] = name
+            options[:content] = merge_content(options[:content], capture_content(&block)) if block
             proc = proc do |opts|
               #{klass}.new(options.merge(opts)) # Sequence.new(options.merge(opts))
             end
-            @root = BaseElem.new(name, proc, options[:content])
+            push_element(BaseElem.new(name, proc, options[:content]))
           end
         EVAL
       end
@@ -183,7 +253,7 @@ module RASN1
             proc = proc do |opts|
               #{klass}.new(type, options.merge(opts)) # SequenceOf.new(type, options.merge(opts))
             end
-            @root = BaseElem.new(name, proc, nil)
+            push_element(BaseElem.new(name, proc, nil))
           end
         EVAL
       end
@@ -210,7 +280,7 @@ module RASN1
       def objectid(name, options={})
         options[:name] = name
         proc = proc { |opts| Types::ObjectId.new(options.merge(opts)) }
-        @root = BaseElem.new(name, proc, nil)
+        push_element(BaseElem.new(name, proc, nil))
       end
 
       # @param [Symbol,String] name name of object in model
@@ -220,7 +290,7 @@ module RASN1
       def any(name, options={})
         options[:name] = name
         proc = proc { |opts| Types::Any.new(options.merge(opts)) }
-        @root = BaseElem.new(name, proc, nil)
+        push_element(BaseElem.new(name, proc, nil))
       end
 
       # Give type name (aka class name)
@@ -240,6 +310,41 @@ module RASN1
         model = new
         model.parse!(str, ber: ber)
         model
+      end
+
+      private
+
+      # Remove from +builder+ the elements consumed by +elem+. This happens when sub-elements
+      # are defined as arguments (through +:content+ option or as +wrapper+ argument) inside a
+      # content block: they were already registered in +builder+ by their own definition.
+      # @return [void]
+      def remove_consumed_elements(builder, elem)
+        children = case elem
+                   when BaseElem then elem.content
+                   when WrapElem then [elem.element]
+                   end
+        return if children.nil?
+
+        children.each do |child|
+          builder.delete_if { |registered| registered.equal?(child) }
+        end
+      end
+
+      # Merge content defined through +:content+ option with content defined through a block
+      # @return [Array]
+      def merge_content(option_content, block_content)
+        return block_content if option_content.nil?
+
+        option_content + block_content
+      end
+
+      # Evaluate +block+ and ensure it defines exactly one element
+      # @return [BaseElem,ModelElem,WrapElem]
+      def single_element_from_block(helper_name, &block)
+        content = capture_content(&block)
+        raise ModelValidationError, "#{helper_name} block must define exactly one element" unless content.size == 1
+
+        content.first
       end
     end
 
