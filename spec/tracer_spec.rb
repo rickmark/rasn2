@@ -31,10 +31,88 @@ module RASN1 # rubocop:disable Metrics/ModuleLength
       tracer.trace('test')
       expect(io.string).to eq("test\n")
     end
+
+    context 'with color enabled' do
+      let(:pastel) { Pastel.new }
+      subject(:tracer) { described_class.new(io, color: true) }
+
+      it 'has color enabled' do
+        expect(tracer.color).to be true
+      end
+
+      it 'colorizes a primitive type trace' do
+        tracer.trace('[ 2 ] INTEGER (0x02), len: 1 (0x01)    1 (0x01)')
+        output = io.string
+        expect(output).to include(pastel.yellow('[ 2 ] '))
+        expect(output).to include(pastel.green.bold('INTEGER'))
+      end
+
+      it 'colorizes a named element trace' do
+        tracer.trace('id [ 2 ] INTEGER (0x02), len: 1 (0x01)    1 (0x01)')
+        output = io.string
+        expect(output).to include(pastel.cyan.bold('id'))
+        expect(output).to include(pastel.yellow('[ 2 ] '))
+        expect(output).to include(pastel.green.bold('INTEGER'))
+      end
+
+      it 'colorizes EXPLICIT keyword' do
+        tracer.trace('[ CONTEXT 1 ] EXPLICIT INTEGER (0x81), len: 3 (0x03)')
+        output = io.string
+        expect(output).to include(pastel.magenta('EXPLICIT'))
+        expect(output).to include(pastel.green.bold('INTEGER'))
+      end
+
+      it 'colorizes IMPLICIT keyword' do
+        tracer.trace('[ CONTEXT 0 ] IMPLICIT INTEGER OPTIONAL (0x80), len: 1 (0x01)    2 (0x02)')
+        output = io.string
+        expect(output).to include(pastel.magenta('IMPLICIT'))
+        expect(output).to include(pastel.green.bold('INTEGER OPTIONAL'))
+      end
+
+      it 'colorizes OPTIONAL NONE' do
+        tracer.trace('[ 2 ] INTEGER OPTIONAL NONE')
+        output = io.string
+        expect(output).to include(pastel.green.bold('INTEGER OPTIONAL NONE'))
+      end
+
+      it 'colorizes DEFAULT VALUE' do
+        tracer.trace('[ 2 ] INTEGER DEFAULT VALUE 42')
+        output = io.string
+        expect(output).to include(pastel.green.bold('INTEGER DEFAULT VALUE'))
+      end
+
+      it 'colorizes hex dump lines' do
+        tracer.trace('0000  61 62 63                                         abc')
+        output = io.string
+        expect(output).to include(pastel.blue('0000  61 62 63                                         abc'))
+      end
+
+      it 'colorizes CHOICE keyword' do
+        tracer.trace('CHOICE')
+        output = io.string
+        expect(output).to include(pastel.green.bold('CHOICE'))
+      end
+
+      it 'colorizes ANY keyword' do
+        tracer.trace('ANY')
+        output = io.string
+        expect(output).to include(pastel.green.bold('ANY'))
+      end
+    end
   end
 
   describe '.trace' do
     let(:io) { StringIO.new }
+
+    it 'accepts color keyword and produces colorized output' do
+      pastel = Pastel.new
+      RASN1.trace(io, color: true) do
+        Types::Integer.new.parse!("\x02\x01\x01".b)
+      end
+      output = io.string
+      expect(output).to include(pastel.yellow('[ 2 ] '))
+      expect(output).to include(pastel.green.bold('INTEGER'))
+    end
 
     it 'traces a PRIMITIVE parsing' do
       RASN1.trace(io) do

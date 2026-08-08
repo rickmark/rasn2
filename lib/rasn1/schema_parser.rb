@@ -98,7 +98,6 @@ module RASN1
         when /IMPLICIT\s+TAGS/i then :implicit
         when /EXPLICIT\s+TAGS/i then :explicit
         when /AUTOMATIC\s+TAGS/i then :automatic
-        else nil
         end
       end
 
@@ -132,11 +131,12 @@ module RASN1
         text = text.strip
 
         # Check for constructed types: SEQUENCE { ... }, SET { ... }
-        if text.match?(/\A(SEQUENCE|SET)\s+OF\b/)
+        case text
+        when /\A(SEQUENCE|SET)\s+OF\b/
           parse_of_type(text)
-        elsif text.match?(/\A(SEQUENCE|SET)\s*\{/)
+        when /\A(SEQUENCE|SET)\s*\{/
           parse_constructed_type(text)
-        elsif text.match?(/\A(CHOICE)\s*\{/)
+        when /\A(CHOICE)\s*\{/
           parse_choice_type(text)
         else
           parse_simple_type_definition(text)
@@ -172,7 +172,7 @@ module RASN1
       # @return [Array(Hash, String)]
       def parse_of_type(text)
         match = text.match(/\A(SEQUENCE|SET)\s+OF\s+/m)
-        raise ParseError, "Expected SEQUENCE OF or SET OF" unless match
+        raise ParseError, 'Expected SEQUENCE OF or SET OF' unless match
 
         kind = :"#{match[1].downcase}_of"
         rest = match.post_match
@@ -184,12 +184,12 @@ module RASN1
       # Parse a simple (non-constructed) top-level type definition (type alias)
       # @return [Array(Hash, String)]
       def parse_simple_type_definition(text)
-        type_name, rest = parse_type_reference(text)
+        type_name, = parse_type_reference(text)
         raise ParseError, "Unsupported simple type alias at top level: #{type_name}" unless TYPE_MAP.key?(type_name) || type_name.is_a?(Hash)
 
         # Simple type aliases are not directly supported as Model subclasses
         # They would need to be handled as constrained types
-        raise ParseError, "Simple type aliases are not yet supported as top-level definitions"
+        raise ParseError, 'Simple type aliases are not yet supported as top-level definitions'
       end
 
       # Parse the members inside { ... }
@@ -256,7 +256,7 @@ module RASN1
           default_value, rest = parse_default_value(rest)
           options[:default] = default_value
         elsif rest.match?(/\AOPTIONAL\b/)
-          rest = rest.sub(/\AOPTIONAL/, '')
+          rest = rest.delete_prefix('OPTIONAL')
           options[:optional] = true
         end
 
@@ -269,22 +269,21 @@ module RASN1
         text = text.strip
 
         # Check for inline constructed types
-        if text.match?(/\A(SEQUENCE|SET)\s*\{/)
+        case text
+        when /\A(SEQUENCE|SET)\s*\{/
           type_def, rest = parse_constructed_type(text)
           return [type_def, rest]
-        elsif text.match?(/\A(SEQUENCE|SET)\s+OF\b/)
+        when /\A(SEQUENCE|SET)\s+OF\b/
           type_def, rest = parse_of_type(text)
           return [type_def, rest]
-        elsif text.match?(/\A(CHOICE)\s*\{/)
+        when /\A(CHOICE)\s*\{/
           type_def, rest = parse_choice_type(text)
           return [type_def, rest]
         end
 
         # Multi-word types
-        %w[BIT\ STRING OCTET\ STRING OBJECT\ IDENTIFIER].each do |multi|
-          if text.start_with?(multi)
-            return [multi, text[multi.length..]]
-          end
+        ['BIT STRING', 'OCTET STRING', 'OBJECT IDENTIFIER'].each do |multi|
+          return [multi, text[multi.length..]] if text.start_with?(multi)
         end
 
         # Simple type name
@@ -315,11 +314,11 @@ module RASN1
 
         case text
         when /\ATRUE\b/
-          [true, text.sub(/\ATRUE/, '')]
+          [true, text.delete_prefix('TRUE')]
         when /\AFALSE\b/
-          [false, text.sub(/\AFALSE/, '')]
+          [false, text.delete_prefix('FALSE')]
         when /\ANULL\b/
-          [nil, text.sub(/\ANULL/, '')]
+          [nil, text.delete_prefix('NULL')]
         when /\A(-?\d+)\b/
           [Regexp.last_match(1).to_i, Regexp.last_match.post_match]
         when /\A"([^"]*)"/
@@ -373,7 +372,7 @@ module RASN1
       # Build a SEQUENCE or SET model
       def build_constructed(klass, root_name, type_def, mod, existing_models)
         members = type_def[:members]
-        tag_default = mod[:tag_default]
+        mod[:tag_default]
 
         klass.class_eval do
           content_elems = members.map do |member|
@@ -401,7 +400,7 @@ module RASN1
       end
 
       # Build a CHOICE model
-      def build_choice(klass, root_name, type_def, mod, existing_models)
+      def build_choice(klass, root_name, type_def, _mod, existing_models)
         members = type_def[:members]
 
         klass.class_eval do

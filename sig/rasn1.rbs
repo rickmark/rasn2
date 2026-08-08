@@ -14,5 +14,5 @@ module RASN1
   # @param [String] der binary string to parse
   # @param [Boolean] ber if +true+, decode a BER string, else a DER one
   # @return [Types::Base, Array[Types::Base]]
-  def self.parse: (string der, ?ber: bool) -> Types::Base
+  def self.parse: (string der, ?ber: bool) -> (Types::Base | Array[Types::Base])
 end

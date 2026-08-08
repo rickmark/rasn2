@@ -100,7 +100,7 @@ module RASN1
           result[field_name.to_sym] = value
           # consume optional comma
           remaining = remaining&.strip
-          remaining = remaining.sub(/\A,\s*/, '') if remaining && remaining.start_with?(',')
+          remaining = remaining.sub(/\A,\s*/, '') if remaining&.start_with?(',')
         end
 
         result
@@ -149,12 +149,11 @@ module RASN1
           ch = text[pos]
           if ch == '"'
             # Check for escaped quote (doubled)
-            if pos + 1 < text.length && text[pos + 1] == '"'
-              result << '"'
-              pos += 2
-            else
-              return [result, text[(pos + 1)..]]
-            end
+            return [result, text[(pos + 1)..]] unless pos + 1 < text.length && text[pos + 1] == '"'
+
+            result << '"'
+            pos += 2
+
           else
             result << ch
             pos += 1

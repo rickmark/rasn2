@@ -148,7 +148,7 @@ module RASN1
       # @private Evaluate +block+ and collect all elements defined by it.
       # @return [Array<BaseElem,ModelElem,WrapElem>]
       # @since 0.17.0
-      def capture_content: () { (?) -> untyped } -> untyped
+      def capture_content: () { (?) -> untyped } -> Array[BaseElem|ModelElem|WrapElem]
 
       # Update options of root element.
       # May be used when subclassing.
