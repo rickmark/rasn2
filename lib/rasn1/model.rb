@@ -368,7 +368,7 @@ module RASN1
     #  @param [Hash] options
     #  @return [Elem]
     #  @see Types::Choice#initialize
-    %w[sequence set choice].each do |type|
+    %w[sequence set choice tag].each do |type|
       self.define_type_accel_base(type, Types.const_get(type.capitalize))
     end
 
@@ -757,7 +757,7 @@ module RASN1
                 model_to_h(my_element)
               when Types::SequenceOf
                 sequence_of_to_h(my_element)
-              when Types::Sequence
+              when Types::Sequence, Types::Tag
                 sequence_to_h(my_element)
               when Types::Choice
                 choice_to_h(my_element)
