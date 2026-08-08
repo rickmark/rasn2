@@ -546,6 +546,15 @@ module RASN1
       root.to_der
     end
 
+    # Generate ASN.1 value notation text from this model instance.
+    # @param [String] name the value name (e.g. 'myValue')
+    # @param [String] type_name the ASN.1 type name (e.g. 'PersonnelRecord')
+    # @return [String] value notation text
+    # @since 0.17.0
+    def to_asn1(name: nil, type_name: nil)
+      ValueNotation.emit(self, name: name, type_name: type_name)
+    end
+
     # Give type name (aka class name)
     # @return [String]
     def type
