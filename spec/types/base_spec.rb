@@ -219,6 +219,38 @@ module RASN1::Types # rubocop:disable Metrics/ModuleLength
           expect(type.asn1_class).to eq(:private)
           expect(type.id).to eq(15)
         end
+
+        it 'creates an explicit tagged type from a string (4CC-style)' do
+          type = Integer.new(explicit: 'ftyp')
+          expected_id = 'ftyp'.bytes.reduce(0) { |acc, b| (acc << 8) | b }
+          expect(type.tagged?).to be(true)
+          expect(type.explicit?).to be(true)
+          expect(type.id).to eq(expected_id)
+        end
+
+        it 'creates an implicit tagged type from a string (4CC-style)' do
+          type = Integer.new(implicit: 'moov')
+          expected_id = 'moov'.bytes.reduce(0) { |acc, b| (acc << 8) | b }
+          expect(type.tagged?).to be(true)
+          expect(type.implicit?).to be(true)
+          expect(type.id).to eq(expected_id)
+        end
+
+        it 'creates an explicit tagged type from a symbol (4CC-style)' do
+          type = Integer.new(explicit: :ftyp)
+          expected_id = 'ftyp'.bytes.reduce(0) { |acc, b| (acc << 8) | b }
+          expect(type.tagged?).to be(true)
+          expect(type.explicit?).to be(true)
+          expect(type.id).to eq(expected_id)
+        end
+
+        it 'creates an implicit tagged type from a symbol (4CC-style)' do
+          type = Integer.new(implicit: :moov)
+          expected_id = 'moov'.bytes.reduce(0) { |acc, b| (acc << 8) | b }
+          expect(type.tagged?).to be(true)
+          expect(type.implicit?).to be(true)
+          expect(type.id).to eq(expected_id)
+        end
       end
 
       describe '#to_der' do

@@ -463,15 +463,31 @@ module RASN1
         @constructed = options[:constructed]
         if options[:explicit]
           @tag = :explicit
-          @id_value = options[:explicit]
+          @id_value = tag_id_to_integer(options[:explicit])
         elsif options[:implicit]
           @tag = :implicit
-          @id_value = options[:implicit]
+          @id_value = tag_id_to_integer(options[:implicit])
         elsif options[:tag_value]
-          @id_value = options[:tag_value]
+          @id_value = tag_id_to_integer(options[:tag_value])
         end
 
         @asn1_class = :context if defined?(@tag) && (@asn1_class == :universal)
+      end
+
+      # Convert a tag id to an integer.
+      # If given a String or Symbol, interprets the characters as big-endian octets
+      # (like Apple 4-character codes / 4CCs). Integers are returned as-is.
+      # @param [::Integer, String, Symbol] value tag value
+      # @return [::Integer]
+      def tag_id_to_integer(value)
+        case value
+        when ::Integer
+          value
+        when ::String, ::Symbol
+          value.to_s.bytes.reduce(0) { |acc, b| (acc << 8) | b }
+        else
+          value
+        end
       end
 
       def set_value(value) # rubocop:disable Naming/AccessorMethodName

@@ -213,9 +213,25 @@ module RASN1
 
     def explicit_implicit(options)
       opts = options.dup
-      @explicit = opts.delete(:explicit)
-      @implicit = opts.delete(:implicit)
+      @explicit = tag_id_to_integer(opts.delete(:explicit))
+      @implicit = tag_id_to_integer(opts.delete(:implicit))
       opts
+    end
+
+    # Convert a tag id to an integer.
+    # If given a String or Symbol, interprets the characters as big-endian octets
+    # (like Apple 4-character codes / 4CCs). Integers and +nil+ are returned as-is.
+    # @param [::Integer, String, Symbol, nil] value tag value
+    # @return [::Integer, nil]
+    def tag_id_to_integer(value)
+      case value
+      when ::Integer, NilClass
+        value
+      when ::String, ::Symbol
+        value.to_s.bytes.reduce(0) { |acc, b| (acc << 8) | b }
+      else
+        value
+      end
     end
 
     def generate_explicit_wrapper(options)
