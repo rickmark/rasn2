@@ -3,6 +3,7 @@
 require 'bundler/gem_tasks'
 require 'rspec/core/rake_task'
 require 'rubocop/rake_task'
+require 'steep/rake_task'
 require 'yard'
 
 RSpec::Core::RakeTask.new
@@ -15,5 +16,7 @@ end
 RuboCop::RakeTask.new do |task|
   task.patterns = ['lib/**/*.rb']
 end
+
+Steep::RakeTask.new :steep
 
 task default: :spec

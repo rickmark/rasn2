@@ -9,8 +9,10 @@ gem 'bundler'
 
 group :development do
   gem 'debug'
+  gem 'rbs'
   gem 'ruby-lsp', require: false
   gem 'ruby-lsp-rspec', require: false
+  gem 'steep'
   gem 'yard'
 end
 
