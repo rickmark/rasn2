@@ -4,11 +4,11 @@
 require_relative 'lib/rasn1/version'
 
 Gem::Specification.new do |spec|
-  spec.name          = 'rasn1'
+  spec.name          = 'rasn2'
   spec.version       = RASN1::VERSION
   spec.license       = 'MIT'
-  spec.authors       = ['LemonTree55']
-  spec.email         = ['lenontree@proton.me']
+  spec.authors       = ['LemonTree55', 'Rick Mark']
+  spec.email         = ['lenontree@proton.me', 'rickmark@outlook.com']
 
   spec.summary       = 'Ruby ASN.1 library'
   spec.description   = <<~DESC

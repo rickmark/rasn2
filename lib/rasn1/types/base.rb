@@ -256,7 +256,7 @@ module RASN1
 
       # @param [Integer] level
       # @return [String]
-      def inspect(level=0)
+      def inspect(level=0, color: true)
         str = common_inspect(level)
         str << ' ' << inspect_value
         str << ' OPTIONAL' if optional?

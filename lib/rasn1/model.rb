@@ -633,7 +633,7 @@ module RASN1
     end
 
     # @return [String]
-    def inspect(level=0)
+    def inspect(level=0, color: true)
       "#{'  ' * level}(#{type}) #{root.inspect(-level)}"
     end
 
