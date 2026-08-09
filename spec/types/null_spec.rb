@@ -46,9 +46,9 @@ module RASN2::Types
 
     describe '#inspect' do
       it 'returns inspect string' do
-        expect(Null.new.inspect).to eq('NULL')
-        expect(Null.new(name: :data).inspect).to eq('data NULL')
-        expect(Null.new(optional: true).inspect).to eq('NULL OPTIONAL')
+        expect(Null.new.inspect(color: false)).to eq('NULL')
+        expect(Null.new(name: :data).inspect(color: false)).to eq('data NULL')
+        expect(Null.new(optional: true).inspect(color: false)).to eq('NULL OPTIONAL')
       end
     end
   end

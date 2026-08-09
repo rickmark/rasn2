@@ -45,7 +45,7 @@ module RASN2
     }.freeze
 
     # Constructed type names
-    CONSTRUCTED_TYPES = %w[SEQUENCE SET].freeze
+    CONSTRUCTED_TYPES = %w[SEQUENCE SET TAG].freeze
 
     # Error raised when parsing an ASN.1 schema fails
     class ParseError < RASN2::Error; end

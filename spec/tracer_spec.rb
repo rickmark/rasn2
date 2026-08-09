@@ -212,7 +212,7 @@ module RASN2 # rubocop:disable Metrics/ModuleLength
       it 'traces RASN2.parse (explicit element)' do
         RASN2.parse(TestTrace::DER_EXPLICIT_SEQUENCE)
         expect(io.string).to eq(<<~ENDOFDATA
-          #{colorize_id(4, 'CONTEXT')} #{colorize_class('BASE', 0xa4)}, #{length_specifier(10)}
+          #{colorize_id(4, 'CONTEXT')} #{colorize_class('TAG', 0xa4)}, #{length_specifier(10)}
             0000  30 08 02 01 01 04 03 61 62 63                    0......abc
         ENDOFDATA
                              )
@@ -249,7 +249,7 @@ module RASN2 # rubocop:disable Metrics/ModuleLength
         os = Types::OctetString.new(implicit: 128, value: 'a')
         RASN2.parse(os.to_der)
         expect(io.string).to eq(<<~ENDOFDATA
-            #{colorize_id(128, 'CONTEXT')} #{colorize_class('BASE', 0x9f8100)}, #{length_specifier(1)}
+            #{colorize_id(128, 'CONTEXT')} #{colorize_class('TAG', 0x9f8100)}, #{length_specifier(1)}
               0000  61                                               a
           ENDOFDATA
         )
@@ -412,7 +412,7 @@ module RASN2 # rubocop:disable Metrics/ModuleLength
         RASN2.parse(TestTrace::DER_EXPLICIT_SEQUENCE)
 
         expect(io.string).to eq(<<~ENDOFDATA
-          [ CONTEXT 4 ] BASE (0xa4), len: 10 (0x0a)
+          [ CONTEXT 4 ] TAG (0xa4), len: 10 (0x0a)
             0000  30 08 02 01 01 04 03 61 62 63                    0......abc
         ENDOFDATA
                              )
@@ -451,7 +451,7 @@ module RASN2 # rubocop:disable Metrics/ModuleLength
         RASN2.parse(os.to_der)
 
         expect(io.string).to eq(<<~ENDOFDATA
-          [ CONTEXT 128 ] BASE (0x9f8100), len: 1 (0x01)
+          [ CONTEXT 128 ] TAG (0x9f8100), len: 1 (0x01)
             0000  61                                               a
         ENDOFDATA
                              )

@@ -30,6 +30,7 @@ module RASN2
       def colorize_id(id, tag_class=nil)
         id = id.strip if id.is_a? String
         tag_class = tag_class.strip if tag_class.is_a? String
+
         if tag_class && tag_class != ''
           brace_surround("#{colorize_class(tag_class)} #{colorize(id).bold.green}")
         else

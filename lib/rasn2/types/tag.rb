@@ -83,8 +83,7 @@ module RASN2
             nb_bytes += element.parse!(der[nb_bytes..])
           end
         else
-          @value = der
-          der.length
+          @value = [ RASN2.parse(der) ]
         end
       end
 
@@ -126,6 +125,7 @@ module RASN2
         first_octet = der.unpack1('C').to_i
         asn1_class_bits = first_octet & CLASS_MASK
         if asn1_class_bits == CLASSES[:private]
+          @asn1_class = :private
           _, _, tag_id, = Types.decode_identifier_octets(der)
           @id_value = tag_id
           @matched_tag = tag_id
@@ -164,13 +164,11 @@ module RASN2
 
       def value_to_der
         case @value
-        when Array then @value.map(&:to_der).join
-        else @value.to_s
+        when Array
+          @value.map(&:to_der).join
+        else
+          @value.to_s
         end
-      end
-
-      def trace_data
-        ''
       end
 
       def explicit_type

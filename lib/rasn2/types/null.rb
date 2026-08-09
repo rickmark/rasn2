@@ -9,7 +9,7 @@ module RASN2
       ID = 0x05
 
       # @return [String]
-      def inspect(level=0)
+      def inspect(level=0, color: true)
         str = common_inspect(level)[0..-2] # remove terminal ':'
         str << ' OPTIONAL' if optional?
         str

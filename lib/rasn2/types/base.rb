@@ -45,6 +45,8 @@ module RASN2
     #  ctype_implicit = RASN2::Types::Integer.new(implicit: 0)
     # @author Sylvain Daubert
     class Base # rubocop:disable Metrics/ClassLength
+      ID = nil
+
       # Allowed ASN.1 classes
       CLASSES = {
         universal: 0x00,
@@ -199,6 +201,10 @@ module RASN2
         defined?(@tag) ? @tag == :implicit : nil # rubocop:disable Style/ReturnNilInPredicateMethodDefinition
       end
 
+      def private?
+        self.class == Types::Tag
+      end
+
       # @abstract This method SHOULD be partly implemented by subclasses, which
       #   SHOULD respond to +#value_to_der+.
       # @return [String] DER-formated string
@@ -257,10 +263,24 @@ module RASN2
       # @param [Integer] level
       # @return [String]
       def inspect(level=0, color: true)
-        str = common_inspect(level)
-        str << ' ' << inspect_value
-        str << ' OPTIONAL' if optional?
-        str << " DEFAULT #{@default}" unless @default.nil?
+        str = common_inspect(level, color: color)
+        new_level = level.abs + 1
+
+        case @value
+        when Array
+          @value.each do |item|
+            str << "\n#{item.inspect(new_level, color: color)}"
+          end
+        else
+          if @value.respond_to?(:constructed?) && @value.constructed?
+            str << "#{@value.inspect(new_level, color: color)}"
+          else
+            str << ' ' << inspect_value
+            str << ' OPTIONAL' if optional?
+            str << " DEFAULT #{@default}" unless @default.nil?
+          end
+        end
+
         str
       end
 
@@ -389,20 +409,29 @@ module RASN2
       end
 
       def asn1_class_to_s
-        asn1_class == :universal ? '' : asn1_class.to_s.upcase << ' '
+        case asn1_class
+        when :universal
+          ''
+        when :application
+          'APPLICATION '
+        when :context
+          'CONTEXT '
+        when :private
+          'PRIVATE '
+        end
       end
 
       def msg_type(no_id: false)
         msg = name.nil? ? +'' : "#{colorize_name(name)} "
-        msg << "#{colorize_id(id, asn1_class_to_s)} " unless no_id
+        msg << "#{colorize_id(id, asn1_class_to_s)}" if id && !no_id
         msg << if explicit?
-                 + "#{colorize_attribute('EXPLICIT')} "
+                 + " #{colorize_attribute('EXPLICIT')}"
                elsif implicit?
-                 +  "#{colorize_attribute('IMPLICIT')} "
+                 +  " #{colorize_attribute('IMPLICIT')}"
                else
                  +''
                end
-        msg << colorize_class(type)
+        msg << " #{colorize_class(type)}"
         msg << " #{colorize_attribute('OPTIONAL')}" if optional?
         msg
       end
@@ -417,21 +446,24 @@ module RASN2
         end
       end
 
-      def common_inspect(level)
+      def common_inspect(level=0, color: true)
         lvl = [level, 0].max
         str = '  ' * lvl
-        str << "#{@name} " unless @name.nil?
-        str << asn1_class_to_s
-        str << "[#{id}] EXPLICIT " if explicit?
-        str << "[#{id}] IMPLICIT " if implicit?
-        str << "#{type}:"
+        str << "#{colorize_name(@name)} " if @name
+        str << "#{colorize_id(id, asn1_class_to_s)}" if id
+        str << " #{colorize_attribute('CONSTRUCTED')}" if constructed?
+        str << " #{colorize_attribute('OPTIONAL')}" if optional?
+        str << " #{colorize_attribute('IMPLICIT')}" if implicit?
+        str << " #{colorize_attribute('EXPLICIT')}" if explicit?
+        str << " #{colorize(type).cyan}:"
+        str
       end
 
       def inspect_value
         if value?
-          value.inspect
+          colorize(value.inspect).blue
         else
-          '(NO VALUE)'
+          colorize('(NO VALUE)').red
         end
       end
 

@@ -23,29 +23,6 @@ module RASN2
               (el.value.respond_to?(:empty?) ? !el.value.empty? : !el.value.nil?))
         end
       end
-
-      # @param [::Integer] level (default: 0)
-      # @return [String]
-      def inspect(level=0)
-        case @value
-        when Array
-          str = common_inspect(level)
-          str << "\n"
-          level = level.abs + 1
-          @value.each do |item|
-            case item
-            when Base, Model, Wrapper
-              str << "#{item.inspect(level)}\n"
-            else
-              str << '  ' * level
-              str << "#{item.inspect}\n"
-            end
-          end
-          str
-        else
-          super
-        end
-      end
     end
   end
 end

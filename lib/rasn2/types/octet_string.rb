@@ -17,9 +17,9 @@ module RASN2
 
       # @param [::Integer] level
       # @return [String]
-      def inspect(level=0)
-        str = common_inspect(level)
-        str << " #{value.inspect}"
+      def inspect(level=0, color: true)
+        str = common_inspect(level, color: color)
+        str << " #{colorize(value.inspect).blue}"
       end
 
       # Make string value from +der+ string. Force encoding to UTF-8

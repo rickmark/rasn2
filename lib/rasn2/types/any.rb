@@ -35,21 +35,6 @@ module RASN2
         total_length
       end
 
-      # @param [::Integer] level
-      # @return [String]
-      def inspect(level=0)
-        str = common_inspect(level)
-        str << if !value?
-                 'NULL'
-               elsif @value.is_a?(OctetString) || @value.is_a?(BitString)
-                 "#{@value.type}: #{value.value.inspect}"
-               elsif @value.class < Base
-                 "#{@value.type}: #{value.value}"
-               else
-                 value.to_s.inspect
-               end
-      end
-
       # @private Tracer private API
       # @return [String]
       def trace
@@ -58,40 +43,36 @@ module RASN2
         msg_type(no_id: true) << " #{colorize_nil}"
       end
 
-      private
-
-      def common_inspect(level)
-        lvl = [0, level].max
-        str = '  ' * lvl
-        str << "#{@name} " unless @name.nil?
-        str << asn1_class.to_s.upcase << ' ' unless asn1_class == :universal
-        str << "[#{id}] EXPLICIT " if explicit?
-        str << "[#{id}] IMPLICIT " if implicit?
-        str << '(ANY) '
-      end
-
       # @private
       # @see Types::Base#do_parse
       def do_parse(der, ber: false)
+        asn1_class, pc, id, id_size = Types.decode_identifier_octets(der)
+        @id = id
+        @asn1_class = asn1_class
+
         if der.empty?
           return [0, ''] if optional?
 
           raise ASN1Error, 'Expected ANY but get nothing'
         end
 
-        id_size = Types.decode_identifier_octets(der).last
         total_length, = get_data(der[id_size..], ber)
         total_length += id_size
 
         @no_value = false
         real_value = der[0, total_length].to_s
-        @value = real_value
+        if constructed?
+          @value = RASN2.parse(real_value, ber: ber)
+        else
+          @value = real_value
+        end
 
-        [total_length, real_value]
+
+        [total_length, @value]
       end
 
       def trace_any
-        msg_type(no_id: true) << trace_data(value)
+        msg_type(no_id: false) << trace_data(value)
       end
     end
   end

@@ -107,8 +107,8 @@ module RASN2
 
       # @param [::Integer] level
       # @return [String]
-      def inspect(level=0)
-        str = common_inspect(level)
+      def inspect(level=0, color: true)
+        str = common_inspect(level, color: color)
         str << "\n"
         level = level.abs + 1
         @value.each do |item|
@@ -116,10 +116,10 @@ module RASN2
           when Base, Model
             next if item.optional? && item.value.nil?
 
-            str << item.inspect(level)
+            str << item.inspect(level, color: color)
             str << "\n" unless str.end_with?("\n")
           else
-            str << ('  ' * level) << "#{item.inspect}\n"
+            str << ('  ' * level) << "#{item.inspect(color: color)}\n"
           end
         end
         str
