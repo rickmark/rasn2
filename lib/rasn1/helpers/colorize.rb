@@ -6,8 +6,13 @@ module RASN1
         "#{colorize('(').webgray}#{colorize(input).blue}#{colorize(')').webgray}"
       end
 
-      def int_with_hex(input)
-        "#{colorize(input).blue} #{parens_hex(input)}"
+      def int_with_hex(input, raw_value=nil)
+        if raw_value
+          "#{colorize(input).blue} #{parens_hex(raw_value)}"
+        else
+          "#{colorize(input).blue} #{parens_hex(input)}"
+        end
+
       end
 
       def brace_surround(input)
@@ -44,6 +49,10 @@ module RASN1
 
       def colorize_attribute(attribute)
         colorize(attribute).bold.magenta
+      end
+
+      def colorize_default(value)
+        colorize(value).green.bold
       end
 
       def colorize_nil(name = 'NONE')

@@ -64,10 +64,205 @@ module RASN1 # rubocop:disable Metrics/ModuleLength
         ENDOFTRACE
         )
       end
-      output = io.string
-      expect(output).to include(pastel.yellow('[ 2 ] '))
-      expect(output).to include(pastel.green.bold('INTEGER'))
+
+      it 'traces an IMPLICIT PRIMITIVE parsing' do
+        Types::Integer.new(implicit: 7, class: :application).parse!("\x47\x01\x01".b)
+
+        expect(io.string).to eq(<<~ENDOFTRACE
+          #{colorize_id(7, 'APPLICATION')} #{colorize_attribute('IMPLICIT')} #{colorize_class('INTEGER', 0x47)}, #{length_specifier(1)}    #{int_with_hex(1)}
+        ENDOFTRACE
+                             )
+      end
+
+      it 'traces a ANY parsing' do
+        Types::Any.new.parse!("\x02\x01\x01".b)
+
+        expect(io.string).to eq("#{colorize_class('ANY')}\n  0000  02 01 01                                         ...\n")
+      end
+
+      it 'traces an OPTIONAL ANY parsing' do
+        Types::Any.new(optional: true).parse!('')
+        Types::Any.new(optional: true).parse!("\x02\x01\x01".b)
+        expect(io.string).to eq(<<~ENDOFTRACE
+          #{colorize_class('ANY')} #{colorize_attribute('OPTIONAL')} #{colorize_nil('NONE')}
+          #{colorize_class('ANY')} #{colorize_attribute('OPTIONAL')}
+            0000  02 01 01                                         ...
+        ENDOFTRACE
+                             )
+      end
+
+      it 'traces a CONSTRUCTED parsing' do
+        seq = Types::Sequence.new(value: [ Types::Integer.new, Types::OctetString.new ])
+        seq.parse!(TestTrace::DER_SEQUENCE)
+        expect(io.string).to eq(<<~ENDOFDATA
+            #{colorize_id(16)} #{colorize_class('SEQUENCE', 0x30)}, #{length_specifier(8)}
+              #{colorize_id(2)} #{colorize_class('INTEGER', 0x02)}, #{length_specifier(1)}    #{int_with_hex(1)}
+              #{colorize_id(4)} #{colorize_class('OCTET STRING', 0x04)}, #{length_specifier(3)}
+                0000  61 62 63                                         abc
+          ENDOFDATA
+        )
+      end
+
+      it 'traces an EXPLICIT CONSTRUCTED parsing' do
+        seq = Types::Sequence.new(explicit: 4, value: [ Types::Integer.new, Types::OctetString.new ])
+        seq.parse!(TestTrace::DER_EXPLICIT_SEQUENCE)
+        expect(io.string).to eq(<<~ENDOFTRACE
+            #{colorize_id(4, 'CONTEXT')} #{colorize_attribute('EXPLICIT')} #{colorize_class('SEQUENCE', 0xa4)}, #{length_specifier(10)}
+              #{colorize_id(16)} #{colorize_class('SEQUENCE', 0x30)}, #{length_specifier(8)}
+                #{colorize_id(2)} #{colorize_class('INTEGER', 2)}, #{length_specifier(1)}    #{int_with_hex(1)}
+                #{colorize_id(4)} #{colorize_class('OCTET STRING', 4)}, #{length_specifier(3)}
+                  0000  61 62 63                                         abc
+          ENDOFTRACE
+       )
+      end
+
+      it 'traces a CONSTRUCTED parsing containing an OPTIONAL element' do
+        seq = Types::Sequence.new(value: [ Types::Integer.new(optional: true), Types::OctetString.new ])
+        seq.parse!("\x30\x05\x04\x03def".b)
+        seq.parse!("\x30\x08\x02\x01\x01\x04\x03abc".b)
+        expect(io.string).to eq(<<~ENDOFTRACE
+          #{colorize_id(16)} #{colorize_class('SEQUENCE', 0x30)}, #{length_specifier(5)}
+            #{colorize_id(2)} #{colorize_class('INTEGER')} #{colorize_attribute('OPTIONAL')} #{colorize_nil}
+            #{colorize_id(4)} #{colorize_class('OCTET STRING', 0x04)}, #{length_specifier(3)}
+              0000  64 65 66                                         def
+          #{colorize_id(16)} #{colorize_class('SEQUENCE', 0x30)}, #{length_specifier(8)}
+            #{colorize_id(2)} #{colorize_class('INTEGER')} #{colorize_attribute('OPTIONAL')} #{parens_hex(2)}, #{length_specifier(1)}    #{int_with_hex(1)}
+            #{colorize_id(4)} #{colorize_class('OCTET STRING', 4)}, #{length_specifier(3)}
+              0000  61 62 63                                         abc
+        ENDOFTRACE
+                             )
+      end
+
+      it 'traces a CONSTRUCTED parsing containing an DEFAULT element' do
+        seq = Types::Sequence.new(name: 'seq', value: [ Types::Integer.new(default: 42), Types::OctetString.new ])
+        seq.parse!("\x30\x05\x04\x03def".b)
+        seq.parse!("\x30\x08\x02\x01\x01\x04\x03abc".b)
+        expect(io.string).to eq(<<~ENDOFTRACE
+            #{colorize_name('seq')} #{colorize_id(16)} #{colorize_class('SEQUENCE', 0x30)}, #{length_specifier(5)}
+              #{colorize_id(2)} #{colorize_class('INTEGER')} #{colorize_attribute('DEFAULT VALUE')} #{colorize_default(42)}
+              #{colorize_id(4)} #{colorize_class('OCTET STRING', 4)}, #{length_specifier(3)}
+                0000  64 65 66                                         def
+            #{colorize_name('seq')} #{colorize_id(16)} #{colorize_class('SEQUENCE', 0x30)}, #{length_specifier(8)}
+              #{colorize_id(2)} #{colorize_class('INTEGER', 2)}, #{length_specifier(1)}    #{int_with_hex(1)}
+              #{colorize_id(4)} #{colorize_class('OCTET STRING', 4)}, #{length_specifier(3)}
+                0000  61 62 63                                         abc
+          ENDOFTRACE
+        )
+      end
+
+      it 'traces a CHOICE parsing' do
+        choice = Types::Choice.new(value: [ Types::Integer.new, Types::OctetString.new ])
+        choice.parse!("\x02\x01\xff".b)
+        choice.parse!("\x04\x03abc".b)
+        expect(io.string).to eq(<<~ENDOFTRACE
+            #{colorize_class('CHOICE')}
+            #{colorize_id(2)} #{colorize_class('INTEGER', 0x02)}, #{length_specifier(1)}    #{int_with_hex(-1, 0xff)}
+            #{colorize_class('CHOICE')}
+            #{colorize_id(4)} #{colorize_class('OCTET STRING', 0x04)}, #{length_specifier(3)}
+              0000  61 62 63                                         abc
+          ENDOFTRACE
+        )
+      end
+
+      it 'traces MODEL parsing' do
+        model = TestModel::OfModel.new
+        model.parse!("\x30\x12\x30\x06\x02\x01\x0f\x80\x01\x02\x30\x08\x02\x01\x10\x81\x03\x02\x01\x03".b)
+        expect(io.string).to eq(<<~ENDOFDATA
+          #{colorize_name('seqof')} #{colorize_id(16)} #{colorize_class('SEQUENCE OF', 0x30)}, #{length_specifier(18)}
+            #{colorize_name('record')} #{colorize_id(16)} #{colorize_class('SEQUENCE', 0x30)}, #{length_specifier(6)}
+              #{colorize_name('id')} #{colorize_id(2)} #{colorize_class('INTEGER', 2)}, #{length_specifier(1)}    #{int_with_hex(15)}
+              #{colorize_name('room')} #{colorize_id(0, 'CONTEXT')} #{colorize_attribute('IMPLICIT')} #{colorize_class('INTEGER')} #{colorize_attribute('OPTIONAL')} #{parens_hex(0x80)}, #{length_specifier(1)}    #{int_with_hex(2)}
+              #{colorize_name('house')} #{colorize_id(1, 'CONTEXT')} #{colorize_attribute('EXPLICIT')} #{colorize_class('INTEGER')} #{colorize_attribute('DEFAULT VALUE')} #{colorize_default(0)}
+            #{colorize_name('record')} #{colorize_id(16)} #{colorize_class('SEQUENCE', 0x30)}, #{length_specifier(8)}
+              #{colorize_name('id')} #{colorize_id(2)} #{colorize_class('INTEGER', 2)}, #{length_specifier(1)}    #{int_with_hex(16)}
+              #{colorize_name('room')} #{colorize_id(0, 'CONTEXT')} #{colorize_attribute('IMPLICIT')} #{colorize_class('INTEGER')} #{colorize_attribute('OPTIONAL')} #{colorize_nil}
+              #{colorize_name('house')} #{colorize_id(1, 'CONTEXT')} #{colorize_attribute('EXPLICIT')} #{colorize_class('INTEGER', 0x81)}, #{length_specifier(3)}
+                0000  02 01 03                                         ...
+                #{colorize_name('house')} #{colorize_id(2)} #{colorize_class('INTEGER', 0x02)}, #{length_specifier(1)}    #{int_with_hex(3)}
+        ENDOFDATA
+                             )
+      end
+
+      it 'traces wrapped MODEL parsing' do
+        model = TestModel::ModelWithImplicitWrapper.new
+        model.parse!("\x30\x0d\xa5\x0b\x02\x01\x10\x80\x01\x07\x81\x03\x02\x01\x03".b)
+        expect(io.string).to eq(<<~ENDOFDATA
+            #{colorize_name('seq')} #{colorize_id(16)} #{colorize_class('SEQUENCE', 0x30)}, #{length_specifier(13)}
+              #{colorize_name('a_record')} #{colorize_id(5, 'CONTEXT')} #{colorize_attribute('IMPLICIT')} #{colorize_class('SEQUENCE', 0xa5)}, #{length_specifier(11)}
+                #{colorize_name('id')} #{colorize_id(2)} #{colorize_class('INTEGER', 2)}, #{length_specifier(1)}    #{int_with_hex(16)}
+                #{colorize_name('room')} #{colorize_id(0, 'CONTEXT')} #{colorize_attribute('IMPLICIT')} #{colorize_class('INTEGER')} #{colorize_attribute('OPTIONAL')} #{parens_hex(0x80)}, #{length_specifier(1)}    #{int_with_hex(7)}
+                #{colorize_name('house')} #{colorize_id(1, 'CONTEXT')} #{colorize_attribute('EXPLICIT')} #{colorize_class('INTEGER', 0x81)}, #{length_specifier(3)}
+                  0000  02 01 03                                         ...
+                  #{colorize_name('house')} #{colorize_id(2)} #{colorize_class('INTEGER', 2)}, #{length_specifier(1)}    #{int_with_hex(3)}
+          ENDOFDATA
+        )
+      end
+
+      it 'traces RASN1.parse' do
+        RASN1.parse(TestTrace::DER_SEQUENCE)
+        expect(io.string).to eq(<<~ENDOFDATA
+            #{colorize_id(16)} #{colorize_class('SEQUENCE', 0x30)}, #{length_specifier(8)}
+              #{colorize_id(2)} #{colorize_class('INTEGER', 0x02)}, #{length_specifier(1)}    #{int_with_hex(1)}
+              #{colorize_id(4)} #{colorize_class('OCTET STRING', 0x04)}, #{length_specifier(3)}
+                0000  61 62 63                                         abc
+          ENDOFDATA
+        )
+      end
+
+      it 'traces RASN1.parse (explicit element)' do
+        RASN1.parse(TestTrace::DER_EXPLICIT_SEQUENCE)
+        expect(io.string).to eq(<<~ENDOFDATA
+          #{colorize_id(4, 'CONTEXT')} #{colorize_class('BASE', 0xa4)}, #{length_specifier(10)}
+            0000  30 08 02 01 01 04 03 61 62 63                    0......abc
+        ENDOFDATA
+                             )
+      end
+
+      it 'traces long length' do
+        os = Types::OctetString.new(value: 'a' * 256)
+
+        RASN1.parse(os.to_der)
+
+        expect(io.string).to eq(<<~ENDOFDATA
+          #{colorize_id(4)} #{colorize_class('OCTET STRING', 0x04)}, #{length_specifier(256, 0x820100)}
+            0000  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61  aaaaaaaaaaaaaaaa
+            0010  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61  aaaaaaaaaaaaaaaa
+            0020  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61  aaaaaaaaaaaaaaaa
+            0030  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61  aaaaaaaaaaaaaaaa
+            0040  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61  aaaaaaaaaaaaaaaa
+            0050  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61  aaaaaaaaaaaaaaaa
+            0060  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61  aaaaaaaaaaaaaaaa
+            0070  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61  aaaaaaaaaaaaaaaa
+            0080  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61  aaaaaaaaaaaaaaaa
+            0090  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61  aaaaaaaaaaaaaaaa
+            00a0  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61  aaaaaaaaaaaaaaaa
+            00b0  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61  aaaaaaaaaaaaaaaa
+            00c0  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61  aaaaaaaaaaaaaaaa
+            00d0  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61  aaaaaaaaaaaaaaaa
+            00e0  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61  aaaaaaaaaaaaaaaa
+            00f0  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61  aaaaaaaaaaaaaaaa
+        ENDOFDATA
+                             )
+      end
+
+      it 'colorizes long id' do
+        os = Types::OctetString.new(implicit: 128, value: 'a')
+        RASN1.parse(os.to_der)
+        expect(io.string).to eq(<<~ENDOFDATA
+            #{colorize_id(128, 'CONTEXT')} #{colorize_class('BASE', 0x9f8100)}, #{length_specifier(1)}
+              0000  61                                               a
+          ENDOFDATA
+        )
+      end
     end
+
+    context 'without color enabled' do
+      around :example do |example|
+        RASN1.trace(io, color: false) do
+          example.call
+        end
+        puts(io.string)
+      end
 
       it 'traces a PRIMITIVE parsing' do
         Types::Integer.new.parse!("\x02\x01\x01".b)
@@ -288,11 +483,37 @@ module RASN1 # rubocop:disable Metrics/ModuleLength
           [ 1 ] BOOLEAN (0x01), len: 1 (0x01)    TRUE (0x01)
           [ 1 ] BOOLEAN (0x01), len: 1 (0x01)    FALSE (0x00)
         ENDOFDATA
-        )
+                             )
       end
       end
 
-    [Enumerated, Integer].each do |klass|
+      context 'with color' do
+        around :example do |example|
+          RASN1.trace(io, color: true) do
+            example.run
+          end
+        end
+
+        def colorize(input)
+          Rainbow.new.wrap(input)
+        end
+
+        it 'traces with Boolean format' do
+          RASN1.parse("\x01\x01\xff")
+          RASN1.parse("\x01\x01\x01", ber: true)
+          RASN1.parse("\x01\x01\x00")
+
+          expect(io.string).to eq(<<~ENDOFDATA
+            #{colorize_id(1)} #{colorize_class('BOOLEAN', 1)}, #{length_specifier(1)}    #{colorize_bool(true, 0xff)}
+            #{colorize_id(1)} #{colorize_class('BOOLEAN', 1)}, #{length_specifier(1)}    #{colorize_bool(true, 0x01)}
+            #{colorize_id(1)} #{colorize_class('BOOLEAN', 1)}, #{length_specifier(1)}    #{colorize_bool(false, 0x00)}
+          ENDOFDATA
+                               )
+        end
+      end
+    end
+
+    [ Enumerated, Integer ].each do |klass|
       describe klass do
         let(:io) { StringIO.new }
         subject { klass.new(enum: { 'ONE' => 1, 'TWO' => 2 }) }
@@ -408,47 +629,6 @@ module RASN1 # rubocop:disable Metrics/ModuleLength
             dueTime [ 24 ] GeneralizedTime (0x18), len: 15 (0x0f)    2022-11-23 10:54:33 UTC
         ENDOFDATA
         )
-      end
-
-      end
-
-      context 'with color' do
-
-        around :example do |example|
-          RASN1.trace(io, color: true) do
-            example.call
-          end
-        end
-
-        def colorize(input)
-          Rainbow.new.wrap(input)
-        end
-
-        it 'traces with Time format' do
-          gt = GeneralizedTime.new(value: Time.utc(2022, 11, 23, 10, 54, 33))
-
-          RASN1.parse(gt.to_der)
-
-          time = +'    ' << colorize(Time.parse('2022-11-23 10:54:33 UTC')).dark.green
-
-          expect(io.string).to eq("#{colorize_id(24)} #{colorize_class('GeneralizedTime')} #{parens_hex(0x18)}, #{length_specifier(15)}#{time}\n")
-        end
-
-        it 'traces an explicit tag' do
-          gt = GeneralizedTime.new(value: Time.utc(2022, 11, 23, 10, 54, 33), explicit: 1, name: 'dueTime')
-
-          gt.parse!(gt.to_der)
-          time = +'    ' << colorize(Time.parse('2022-11-23 10:54:33 UTC')).dark.green
-
-          expect(io.string).to eq(<<~ENDOFDATA
-            #{colorize_name('dueTime')} #{colorize_id(1, 'CONTEXT')} #{colorize_attribute('EXPLICIT')} #{colorize_class('GeneralizedTime', 0x81)}, #{length_specifier(17)}
-              0000  18 0f 32 30 32 32 31 31 32 33 31 30 35 34 33 33  ..20221123105433
-              0010  5a                                               Z
-              #{colorize_name('dueTime')} #{colorize_id(24)} #{colorize_class('GeneralizedTime')} #{parens_hex(0x18)}, #{length_specifier(15)}#{time}
-            ENDOFDATA
-          )
-        end
-
       end
 
       end

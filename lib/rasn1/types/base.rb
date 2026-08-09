@@ -305,9 +305,9 @@ module RASN1
 
         msg = msg_type
         if default.nil? # rubocop:disable Style/ConditionalAssignment
-          msg << tracer.colorize(' NONE').red
+          msg << " #{colorize_nil}"
         else
-          msg << "#{tracer.colorize(' DEFAULT VALUE ').violet}#{tracer.colorize(default).green}"
+          msg << " #{colorize_attribute('DEFAULT VALUE')} #{colorize_default(value)}"
         end
       end
 
