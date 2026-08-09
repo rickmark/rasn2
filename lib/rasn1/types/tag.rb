@@ -92,7 +92,7 @@ module RASN1
 
       def extract_tag_binding(options)
         tag = options.delete(:tag)
-        @any_private = !!options.delete(:any_private)
+        @any_private = !options.delete(:any_private).nil?
 
         @accepted_tags = case tag
                          when Array then tag
@@ -113,7 +113,7 @@ module RASN1
         end
       end
 
-      def check_id(der) # rubocop:disable Naming/PredicateMethod
+      def check_id(der)
         return check_any_private_id(der) if @any_private && @accepted_tags.empty?
         return check_multi_tag_id(der) if @accepted_tags.length > 1
 

@@ -149,7 +149,7 @@ module RASN1
       def trace_data
         return super if explicit?
 
-        +'    ' << raw_data
+        +'    ' << colorize(Time.parse(raw_data)).dark.green
       end
     end
   end

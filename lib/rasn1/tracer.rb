@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'rainbow'
+
 module RASN1
   # @private
   class Tracer
@@ -7,8 +9,18 @@ module RASN1
     attr_reader :io
     # @return [Integer]
     attr_accessor :tracing_level
-    # @return [Boolean]
-    attr_reader :color
+
+    def color
+      @rainbow.enabled
+    end
+
+    def color=(enabled)
+      @rainbow.enabled = enabled
+    end
+
+    def colorize(str)
+      @rainbow ? @rainbow.wrap(str) : Rainbow.new.wrap(str)
+    end
 
     TRACED_CLASSES = [Types::Any, Types::Choice, Types::Sequence, Types::SequenceOf, Types::Base].freeze
 
@@ -17,23 +29,14 @@ module RASN1
     def initialize(io, color: false)
       @io = io
       @tracing_level = 0
-      @color = color
-      @pastel = nil
-      if color
-        begin
-          require 'pastel'
-          @pastel = Pastel.new
-        rescue LoadError
-          @color = false
-        end
-      end
+      @rainbow = Rainbow.new
+      @rainbow.enabled = color
     end
 
     # Puts +msg+ onto {#io}.
     # @param [String] msg
     # @return [void]
     def trace(msg)
-      msg = colorize(msg) if @pastel
       @io.puts(indent << msg)
     end
 
@@ -43,72 +46,6 @@ module RASN1
     def indent(level=nil)
       level ||= @tracing_level
       '  ' * level
-    end
-
-    private
-
-    # Colorize a trace message using pastel.
-    # @param [String] msg
-    # @return [String]
-    def colorize(msg)
-      return msg unless @pastel
-
-      # Colorize hex dump lines (e.g. "  0000  61 62 63 ...")
-      if msg.match?(/\A\s*[0-9a-f]{4}\s/)
-        return @pastel.blue(msg)
-      end
-
-      result = +''
-
-      # Colorize element name prefix (e.g. "seqof ", "id ")
-      if msg.match?(/\A(\w+)\s/)
-        name_match = msg.match(/\A(\w+)\s/)
-        # Only treat it as a name if followed by a tag bracket, type keyword, or known keyword
-        if msg.match?(/\A\w+\s+(\[|CHOICE|ANY|EXPLICIT|IMPLICIT)/)
-          result << @pastel.cyan.bold(name_match[1]) << ' '
-          msg = msg[name_match[0].length..]
-        end
-      end
-
-      # Colorize tag brackets and content (e.g. "[ 16 ] ", "[ CONTEXT 4 ] ")
-      if (tag_match = msg.match(/\A(\[.*?\]\s)/))
-        result << @pastel.yellow(tag_match[1])
-        msg = msg[tag_match[0].length..]
-      end
-
-      # Colorize EXPLICIT/IMPLICIT keywords
-      if (mod_match = msg.match(/\A(EXPLICIT|IMPLICIT)\s/))
-        result << @pastel.magenta(mod_match[1]) << ' '
-        msg = msg[mod_match[0].length..]
-      end
-
-      # Colorize type name (e.g. "SEQUENCE", "INTEGER", "OCTET STRING", "BOOLEAN", etc.)
-      if (type_match = msg.match(/\A([A-Z][A-Z ]*[A-Z]|ANY|CHOICE)/))
-        result << @pastel.green.bold(type_match[1])
-        msg = msg[type_match[0].length..]
-      end
-
-      # Colorize OPTIONAL keyword
-      if (opt_match = msg.match(/\A(\s*OPTIONAL)/))
-        result << @pastel.red(opt_match[1])
-        msg = msg[opt_match[0].length..]
-      end
-
-      # Colorize DEFAULT VALUE
-      if (def_match = msg.match(/\A(\s*DEFAULT VALUE\s*\S*)/))
-        result << @pastel.red(def_match[1])
-        msg = msg[def_match[0].length..]
-      end
-
-      # Colorize NONE
-      if (none_match = msg.match(/\A(\s*NONE)/))
-        result << @pastel.red.dim(none_match[1])
-        msg = msg[none_match[0].length..]
-      end
-
-      # Append remaining text (encoded id, length, data value)
-      result << msg
-      result
     end
   end
 
@@ -128,21 +65,25 @@ module RASN1
   #   end
   # @return [void]
   def self.trace(io=$stdout, color: false)
-    @tracer = Tracer.new(io, color: color)
+    self.tracer = Tracer.new(io, color: color)
     Tracer::TRACED_CLASSES.each(&:start_tracing)
 
     begin
-      yield @tracer
+      yield self.tracer
     ensure
       Tracer::TRACED_CLASSES.reverse.each(&:stop_tracing)
-      @tracer.io.flush
-      @tracer = nil
+      self.tracer.io.flush
+      self.tracer = nil
     end
   end
 
   # @private
   def self.tracer
     @tracer
+  end
+
+  def self.tracer=(tracer)
+    @tracer = tracer
   end
 
   module Types
@@ -170,14 +111,14 @@ module RASN1
       # @see #parse!
       def do_parse_with_tracing(der, ber:)
         ret = do_parse_without_tracing(der, ber: ber)
-        RASN1.tracer.trace(self.trace)
+        tracer.trace(self.trace)
         ret
       end
 
       def do_parse_explicit_with_tracing(data)
-        RASN1.tracer.tracing_level += 1
+        tracer.tracing_level += 1
         do_parse_explicit_without_tracing(data)
-        RASN1.tracer.tracing_level -= 1
+        tracer.tracing_level -= 1
       end
     end
 
