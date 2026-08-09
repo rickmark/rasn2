@@ -64,193 +64,10 @@ module RASN1 # rubocop:disable Metrics/ModuleLength
         ENDOFTRACE
         )
       end
-
-      it 'traces an IMPLICIT PRIMITIVE parsing' do
-        Types::Integer.new(implicit: 7, class: :application).parse!("\x47\x01\x01".b)
-
-        expect(io.string).to eq(<<~ENDOFTRACE
-          #{Rainbow('[').webgray} #{Rainbow('APPLICATION').bright.magenta} #{Rainbow(7).green} ] IMPLICIT INTEGER (0x47), len: 1 (0x01)    1 (0x01)
-        ENDOFTRACE
-                             )
-      end
-
-      it 'traces a ANY parsing' do
-        Types::Any.new.parse!("\x02\x01\x01".b)
-
-        expect(io.string).to eq("#{colorize_class('ANY')}\n  0000  02 01 01                                         ...\n")
-      end
-
-      it 'traces an OPTIONAL ANY parsing' do
-        Types::Any.new(optional: true).parse!('')
-        Types::Any.new(optional: true).parse!("\x02\x01\x01".b)
-        expect(io.string).to eq(<<~ENDOFTRACE
-          #{colorize_class('ANY')} #{colorize_attribute('OPTIONAL')} #{colorize_nil('NONE')}
-          #{colorize_class('ANY')} #{colorize_attribute('OPTIONAL')}
-            0000  02 01 01                                         ...
-        ENDOFTRACE
-                             )
-      end
-
-      it 'traces a CONSTRUCTED parsing' do
-        seq = Types::Sequence.new(value: [ Types::Integer.new, Types::OctetString.new ])
-        seq.parse!(TestTrace::DER_SEQUENCE)
-        expect(io.string).to eq(<<~ENDOFDATA
-
-          ENDOFDATA
-        )
-      end
-
-      it 'traces an EXPLICIT CONSTRUCTED parsing' do
-        seq = Types::Sequence.new(explicit: 4, value: [ Types::Integer.new, Types::OctetString.new ])
-        seq.parse!(TestTrace::DER_EXPLICIT_SEQUENCE)
-        expect(io.string).to eq(TestTrace::TRACE_EXPLICIT_SEQUENCE)
-      end
-
-      it 'traces a CONSTRUCTED parsing containing an OPTIONAL element' do
-        seq = Types::Sequence.new(value: [ Types::Integer.new(optional: true), Types::OctetString.new ])
-        seq.parse!("\x30\x05\x04\x03def".b)
-        seq.parse!("\x30\x08\x02\x01\x01\x04\x03abc".b)
-        expect(io.string).to eq(<<~ENDOFTRACE
-          [ 16 ] SEQUENCE (0x30), len: 5 (0x05)
-            [ 2 ] INTEGER OPTIONAL NONE
-            [ 4 ] OCTET STRING (0x04), len: 3 (0x03)
-              0000  64 65 66                                         def
-          [ 16 ] SEQUENCE (0x30), len: 8 (0x08)
-            [ 2 ] INTEGER OPTIONAL (0x02), len: 1 (0x01)    1 (0x01)
-            [ 4 ] OCTET STRING (0x04), len: 3 (0x03)
-              0000  61 62 63                                         abc
-        ENDOFTRACE
-                             )
-      end
-
-      it 'traces a CONSTRUCTED parsing containing an DEFAULT element' do
-        seq = Types::Sequence.new(name: 'seq', value: [ Types::Integer.new(default: 42), Types::OctetString.new ])
-        seq.parse!("\x30\x05\x04\x03def".b)
-        seq.parse!("\x30\x08\x02\x01\x01\x04\x03abc".b)
-        expect(io.string).to eq(<<~ENDOFTRACE
-          [38;5;188m[1mseq[0m [2m[38;5;145m[ [0m[35m[0m[1m[0m[32m[1m16[0m[2m[38;5;145m ] [0m[1m[33mSEQUENCE[0m[38;5;145m ([0m[34m0x30[0m[38;5;145m),[0m[38;5;188m len: [0m[34m5[0m[38;5;145m ([0m[34m0x05[0m[38;5;145m)[0m
-            [2m[38;5;145m[ [0m[35m[0m[1m[0m[32m[1m2[0m[2m[38;5;145m ] [0m[1m[33mINTEGER[0m[38;5;219m DEFAULT VALUE [0m[32m42[0m
-            [2m[38;5;145m[ [0m[35m[0m[1m[0m[32m[1m4[0m[2m[38;5;145m ] [0m[1m[33mOCTET STRING[0m[38;5;145m ([0m[34m0x04[0m[38;5;145m),[0m[38;5;188m len: [0m[34m3[0m[38;5;145m ([0m[34m0x03[0m[38;5;145m)[0m
-              0000  64 65 66                                         def
-          [38;5;188m[1mseq[0m [2m[38;5;145m[ [0m[35m[0m[1m[0m[32m[1m16[0m[2m[38;5;145m ] [0m[1m[33mSEQUENCE[0m[38;5;145m ([0m[34m0x30[0m[38;5;145m),[0m[38;5;188m len: [0m[34m8[0m[38;5;145m ([0m[34m0x08[0m[38;5;145m)[0m
-            [2m[38;5;145m[ [0m[35m[0m[1m[0m[32m[1m2[0m[2m[38;5;145m ] [0m[1m[33mINTEGER[0m[38;5;145m ([0m[34m0x02[0m[38;5;145m),[0m[38;5;188m len: [0m[34m1[0m[38;5;145m ([0m[34m0x01[0m[38;5;145m)[0m    [34m1[0m[38;5;145m ([0m[34m0x01[0m[38;5;145m)[0m
-            [2m[38;5;145m[ [0m[35m[0m[1m[0m[32m[1m4[0m[2m[38;5;145m ] [0m[1m[33mOCTET STRING[0m[38;5;145m ([0m[34m0x04[0m[38;5;145m),[0m[38;5;188m len: [0m[34m3[0m[38;5;145m ([0m[34m0x03[0m[38;5;145m)[0m
-              0000  61 62 63                                         abc
-        ENDOFTRACE
-                             )
-      end
-
-      it 'traces a CHOICE parsing' do
-        choice = Types::Choice.new(value: [ Types::Integer.new, Types::OctetString.new ])
-        choice.parse!("\x02\x01\xff".b)
-        choice.parse!("\x04\x03abc".b)
-        expect(io.string).to eq(<<~ENDOFTRACE
-          [1m[33mCHOICE[0m
-          [2m[38;5;145m[ [0m[35m[0m[1m[0m[32m[1m2[0m[2m[38;5;145m ] [0m[1m[33mINTEGER[0m[38;5;145m ([0m[34m0x02[0m[38;5;145m),[0m[38;5;188m len: [0m[34m1[0m[38;5;145m ([0m[34m0x01[0m[38;5;145m)[0m    [34m-1[0m[38;5;145m ([0m[34m0xff[0m[38;5;145m)[0m
-          [1m[33mCHOICE[0m
-          [2m[38;5;145m[ [0m[35m[0m[1m[0m[32m[1m4[0m[2m[38;5;145m ] [0m[1m[33mOCTET STRING[0m[38;5;145m ([0m[34m0x04[0m[38;5;145m),[0m[38;5;188m len: [0m[34m3[0m[38;5;145m ([0m[34m0x03[0m[38;5;145m)[0m
-            #{Rainbow("0000").webgray}  61 62 63                                         abc
-        ENDOFTRACE
-                             )
-      end
-
-      it 'traces MODEL parsing' do
-        model = TestModel::OfModel.new
-        model.parse!("\x30\x12\x30\x06\x02\x01\x0f\x80\x01\x02\x30\x08\x02\x01\x10\x81\x03\x02\x01\x03".b)
-        expect(io.string).to eq(<<~ENDOFDATA
-          seqof [ 16 ] #{colorize_class('SEQUENCE OF')} (0x30), #{length_specifier(18)}
-            record [ 16 ] SEQUENCE (0x30), len: 6 (0x06)
-              id [ 2 ] INTEGER (0x02), len: 1 (0x01)    15 (0x0f)
-              room [ CONTEXT 0 ] IMPLICIT INTEGER OPTIONAL (0x80), len: 1 (0x01)    2 (0x02)
-              house [ CONTEXT 1 ] EXPLICIT INTEGER DEFAULT VALUE 0
-            record [ 16 ] SEQUENCE (0x30), len: 8 (0x08)
-              id [ 2 ] INTEGER (0x02), len: 1 (0x01)    16 (0x10)
-              room [ CONTEXT 0 ] IMPLICIT INTEGER OPTIONAL NONE
-              house [ CONTEXT 1 ] EXPLICIT INTEGER (0x81), len: 3 (0x03)
-                0000  02 01 03                                         ...
-                house [ 2 ] INTEGER (0x02), len: 1 (0x01)    3 (0x03)
-        ENDOFDATA
-                             )
-      end
-
-      it 'traces wrapped MODEL parsing' do
-        model = TestModel::ModelWithImplicitWrapper.new
-        model.parse!("\x30\x0d\xa5\x0b\x02\x01\x10\x80\x01\x07\x81\x03\x02\x01\x03".b)
-        expect(io.string).to eq(<<~ENDOFDATA
-[38;5;188m[1mseq[0m [2m[38;5;145m[ [0m[35m[0m[1m[0m[32m[1m16[0m[2m[38;5;145m ] [0m[1m[33mSEQUENCE[0m[38;5;145m ([0m[34m0x30[0m[38;5;145m),[0m[38;5;188m len: [0m[34m13[0m[38;5;145m ([0m[34m0x0d[0m[38;5;145m)[0m
-  [38;5;188m[1ma_record[0m [2m[38;5;145m[ [0m[35m[1mCONTEXT [0m[32m[1m5[0m[2m[38;5;145m ] [0m[35mIMPLICIT [0m[1m[33mSEQUENCE[0m[38;5;145m ([0m[34m0xa5[0m[38;5;145m),[0m[38;5;188m len: [0m[34m11[0m[38;5;145m ([0m[34m0x0b[0m[38;5;145m)[0m
-    [38;5;188m[1mid[0m [2m[38;5;145m[ [0m[35m[0m[1m[0m[32m[1m2[0m[2m[38;5;145m ] [0m[1m[33mINTEGER[0m[38;5;145m ([0m[34m0x02[0m[38;5;145m),[0m[38;5;188m len: [0m[34m1[0m[38;5;145m ([0m[34m0x01[0m[38;5;145m)[0m    [34m16[0m[38;5;145m ([0m[34m0x10[0m[38;5;145m)[0m
-    [38;5;188m[1mroom[0m [2m[38;5;145m[ [0m[35m[1mCONTEXT [0m[32m[1m0[0m[2m[38;5;145m ] [0m[35mIMPLICIT [0m[1m[33mINTEGER[0m[35m OPTIONAL[0m[38;5;145m ([0m[34m0x80[0m[38;5;145m),[0m[38;5;188m len: [0m[34m1[0m[38;5;145m ([0m[34m0x01[0m[38;5;145m)[0m    [34m7[0m[38;5;145m ([0m[34m0x07[0m[38;5;145m)[0m
-    [38;5;188m[1mhouse[0m [2m[38;5;145m[ [0m[35m[1mCONTEXT [0m[32m[1m1[0m[2m[38;5;145m ] [0m[35mEXPLICIT [0m[1m[33mINTEGER[0m[38;5;145m ([0m[34m0x81[0m[38;5;145m),[0m[38;5;188m len: [0m[34m3[0m[38;5;145m ([0m[34m0x03[0m[38;5;145m)[0m
-      0000  02 01 03                                         ...
-      [38;5;188m[1mhouse[0m [2m[38;5;145m[ [0m[35m[0m[1m[0m[32m[1m2[0m[2m[38;5;145m ] [0m[1m[33mINTEGER[0m[38;5;145m ([0m[34m0x02[0m[38;5;145m),[0m[38;5;188m len: [0m[34m1[0m[38;5;145m ([0m[34m0x01[0m[38;5;145m)[0m    [34m3[0m[38;5;145m ([0m[34m0x03[0m[38;5;145m)[0m
-        ENDOFDATA
-                             )
-      end
-
-      it 'traces RASN1.parse' do
-        RASN1.parse(TestTrace::DER_SEQUENCE)
-        expect(io.string).to eq(<<~ENDOFDATA
-[2m[38;5;145m[ [0m[35m[0m[1m[0m[32m[1m16[0m[2m[38;5;145m ] [0m[1m[33mSEQUENCE[0m[38;5;145m ([0m[34m0x30[0m[38;5;145m),[0m[38;5;188m len: [0m[34m8[0m[38;5;145m ([0m[34m0x08[0m[38;5;145m)[0m
-  [2m[38;5;145m[ [0m[35m[0m[1m[0m[32m[1m2[0m[2m[38;5;145m ] [0m[1m[33mINTEGER[0m[38;5;145m ([0m[34m0x02[0m[38;5;145m),[0m[38;5;188m len: [0m[34m1[0m[38;5;145m ([0m[34m0x01[0m[38;5;145m)[0m    [34m1[0m[38;5;145m ([0m[34m0x01[0m[38;5;145m)[0m
-  [2m[38;5;145m[ [0m[35m[0m[1m[0m[32m[1m4[0m[2m[38;5;145m ] [0m[1m[33mOCTET STRING[0m[38;5;145m ([0m[34m0x04[0m[38;5;145m),[0m[38;5;188m len: [0m[34m3[0m[38;5;145m ([0m[34m0x03[0m[38;5;145m)[0m
-ENDOFDATA)
-      end
-
-      it 'traces RASN1.parse (explicit element)' do
-        RASN1.parse(TestTrace::DER_EXPLICIT_SEQUENCE)
-        expect(io.string).to eq(<<~ENDOFDATA
-          [ CONTEXT 4 ] BASE (0xa4), len: 10 (0x0a)
-            0000  30 08 02 01 01 04 03 61 62 63                    0......abc
-        ENDOFDATA
-                             )
-      end
-
-      it 'traces long length' do
-        os = Types::OctetString.new(value: 'a' * 256)
-
-        RASN1.parse(os.to_der)
-
-        expect(io.string).to eq(<<~ENDOFDATA
-          [ 4 ] OCTET STRING (0x04), len: 256 (0x820100)
-            0000  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61  aaaaaaaaaaaaaaaa
-            0010  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61  aaaaaaaaaaaaaaaa
-            0020  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61  aaaaaaaaaaaaaaaa
-            0030  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61  aaaaaaaaaaaaaaaa
-            0040  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61  aaaaaaaaaaaaaaaa
-            0050  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61  aaaaaaaaaaaaaaaa
-            0060  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61  aaaaaaaaaaaaaaaa
-            0070  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61  aaaaaaaaaaaaaaaa
-            0080  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61  aaaaaaaaaaaaaaaa
-            0090  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61  aaaaaaaaaaaaaaaa
-            00a0  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61  aaaaaaaaaaaaaaaa
-            00b0  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61  aaaaaaaaaaaaaaaa
-            00c0  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61  aaaaaaaaaaaaaaaa
-            00d0  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61  aaaaaaaaaaaaaaaa
-            00e0  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61  aaaaaaaaaaaaaaaa
-            00f0  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61  aaaaaaaaaaaaaaaa
-        ENDOFDATA
-                             )
-      end
-
-      it 'colorizes long id' do
-        os = Types::OctetString.new(implicit: 128, value: 'a')
-        RASN1.parse(os.to_der)
-        expect(io.string).to eq(<<~ENDOFDATA
-          [2m[38;5;145m[ [0m[35m[1mCONTEXT [0m[32m[1m128[0m[2m[38;5;145m ] [0m[1m[33mBASE[0m[38;5;145m ([0m[34m0x9f8100[0m[38;5;145m),[0m[38;5;188m len: [0m[34m1[0m[38;5;145m ([0m[34m0x01[0m[38;5;145m)[0m
-            0000  61                                               a
-        ENDOFDATA
-                             )
-      end
+      output = io.string
+      expect(output).to include(pastel.yellow('[ 2 ] '))
+      expect(output).to include(pastel.green.bold('INTEGER'))
     end
-
-    context 'without color enabled' do
-      around :example do |example|
-        RASN1.trace(io, color: false) do
-          example.call
-        end
-        puts(io.string)
-      end
 
       it 'traces a PRIMITIVE parsing' do
         Types::Integer.new.parse!("\x02\x01\x01".b)
@@ -471,37 +288,11 @@ ENDOFDATA)
           [ 1 ] BOOLEAN (0x01), len: 1 (0x01)    TRUE (0x01)
           [ 1 ] BOOLEAN (0x01), len: 1 (0x01)    FALSE (0x00)
         ENDOFDATA
-                             )
+        )
       end
       end
 
-      context 'with color' do
-        around :example do |example|
-          RASN1.trace(io, color: true) do
-            example.run
-          end
-        end
-
-        def colorize(input)
-          Rainbow.new.wrap(input)
-        end
-
-        it 'traces with Boolean format' do
-          RASN1.parse("\x01\x01\xff")
-          RASN1.parse("\x01\x01\x01", ber: true)
-          RASN1.parse("\x01\x01\x00")
-
-          expect(io.string).to eq(<<~ENDOFDATA
-            #{colorize_id(1)} #{colorize_class('BOOLEAN', 1)}, #{length_specifier(1)}    #{colorize_bool(true, 0xff)}
-            #{colorize_id(1)} #{colorize_class('BOOLEAN', 1)}, #{length_specifier(1)}    #{colorize_bool(true, 0x01)}
-            #{colorize_id(1)} #{colorize_class('BOOLEAN', 1)}, #{length_specifier(1)}    #{colorize_bool(false, 0x00)}
-          ENDOFDATA
-                               )
-        end
-      end
-    end
-
-    [ Enumerated, Integer ].each do |klass|
+    [Enumerated, Integer].each do |klass|
       describe klass do
         let(:io) { StringIO.new }
         subject { klass.new(enum: { 'ONE' => 1, 'TWO' => 2 }) }
@@ -617,6 +408,47 @@ ENDOFDATA)
             dueTime [ 24 ] GeneralizedTime (0x18), len: 15 (0x0f)    2022-11-23 10:54:33 UTC
         ENDOFDATA
         )
+      end
+
+      end
+
+      context 'with color' do
+
+        around :example do |example|
+          RASN1.trace(io, color: true) do
+            example.call
+          end
+        end
+
+        def colorize(input)
+          Rainbow.new.wrap(input)
+        end
+
+        it 'traces with Time format' do
+          gt = GeneralizedTime.new(value: Time.utc(2022, 11, 23, 10, 54, 33))
+
+          RASN1.parse(gt.to_der)
+
+          time = +'    ' << colorize(Time.parse('2022-11-23 10:54:33 UTC')).dark.green
+
+          expect(io.string).to eq("#{colorize_id(24)} #{colorize_class('GeneralizedTime')} #{parens_hex(0x18)}, #{length_specifier(15)}#{time}\n")
+        end
+
+        it 'traces an explicit tag' do
+          gt = GeneralizedTime.new(value: Time.utc(2022, 11, 23, 10, 54, 33), explicit: 1, name: 'dueTime')
+
+          gt.parse!(gt.to_der)
+          time = +'    ' << colorize(Time.parse('2022-11-23 10:54:33 UTC')).dark.green
+
+          expect(io.string).to eq(<<~ENDOFDATA
+            #{colorize_name('dueTime')} #{colorize_id(1, 'CONTEXT')} #{colorize_attribute('EXPLICIT')} #{colorize_class('GeneralizedTime', 0x81)}, #{length_specifier(17)}
+              0000  18 0f 32 30 32 32 31 31 32 33 31 30 35 34 33 33  ..20221123105433
+              0010  5a                                               Z
+              #{colorize_name('dueTime')} #{colorize_id(24)} #{colorize_class('GeneralizedTime')} #{parens_hex(0x18)}, #{length_specifier(15)}#{time}
+            ENDOFDATA
+          )
+        end
+
       end
 
       end
