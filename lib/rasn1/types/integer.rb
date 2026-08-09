@@ -155,10 +155,10 @@ module RASN1
 
       def trace_data
         return super if explicit?
-        return "    #{der_to_int_value(raw_data)} (0x#{raw_data.unpack1('H*')})" if @enum.empty?
+        return "    #{colorize(der_to_int_value(raw_data)).blue}#{colorize(' (').webgray}#{colorize("0x#{raw_data.unpack1('H*')}").blue}#{colorize(')').webgray}" if @enum.empty?
 
         v = int_to_enum(der_to_int_value(raw_data), check_enum: false)
-        "    #{v} (0x#{raw_data.unpack1('H*')})"
+        "    #{colorize_enum(v, raw_data)}"
       end
     end
   end

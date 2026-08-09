@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'pastel'
+
 begin
   require 'simplecov'
   SimpleCov.start do
@@ -112,4 +114,8 @@ module TestModel
              wrapper(model(:model, RecursiveModel), implicit: 2)
            ]
   end
+end
+
+def pastel
+  @pastel ||= Pastel.new
 end

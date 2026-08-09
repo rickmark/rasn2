@@ -2,6 +2,7 @@
 
 require_relative 'rasn1/version'
 require_relative 'rasn1/errors'
+require_relative 'rasn1/helpers/colorize'
 require_relative 'rasn1/types'
 require_relative 'rasn1/model'
 require_relative 'rasn1/wrapper'

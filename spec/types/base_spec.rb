@@ -81,6 +81,13 @@ module RASN1::Types # rubocop:disable Metrics/ModuleLength
 
     describe '#parse!' do # rubocop:disable Metrics/BlockLength
       let(:unexpected_der) { "\x02\x02\xca\xfe".b }
+      before do
+        Rainbow.enabled = false
+      end
+
+      after do
+        Rainbow.enabled = true
+      end
 
       it 'raises on unexpected ID value' do
         bool = Boolean.new

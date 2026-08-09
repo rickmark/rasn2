@@ -22,6 +22,7 @@ group :test do
 end
 
 group :development, :test do
+  gem 'pastel'
   gem 'rake'
   gem 'rubocop'
   gem 'rubocop-performance'

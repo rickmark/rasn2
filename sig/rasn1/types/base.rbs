@@ -290,6 +290,13 @@ module RASN1
       # {RASN1.parse} to parse non-universal class tags.
       def set_tag: (untyped options) -> untyped
 
+      # Convert a tag id to an integer.
+      # If given a String or Symbol, interprets the characters as big-endian octets
+      # (like Apple 4-character codes / 4CCs). Integers are returned as-is.
+      # @param [::Integer, String, Symbol] value tag value
+      # @return [::Integer]
+      def tag_id_to_integer: (untyped value) -> Integer
+
       def set_value: (untyped value) -> untyped
 
       def build: () -> (untyped | "")

@@ -55,7 +55,7 @@ module RASN1
       def trace
         return trace_any if value?
 
-        msg_type(no_id: true) << ' NONE'
+        msg_type(no_id: true) << " #{colorize_nil}"
       end
 
       private

@@ -53,6 +53,12 @@ module RASN1
         private: 0xc0
       }.freeze
 
+      def colorize(msg)
+        tracer ? tracer.colorize(msg) : Rainbow.new.wrap(msg)
+      end
+
+      include RASN1::Helpers::Colorize
+
       # Binary mask to get class
       # @private
       CLASS_MASK = 0xc0
@@ -77,6 +83,10 @@ module RASN1
       attr_reader :raw_length
 
       private :raw_data, :raw_length
+
+      def tracer
+        ::RASN1.tracer
+      end
 
       # Get ASN.1 type
       # @return [String]
@@ -295,9 +305,9 @@ module RASN1
 
         msg = msg_type
         if default.nil? # rubocop:disable Style/ConditionalAssignment
-          msg << ' NONE'
+          msg << tracer.colorize(' NONE').red
         else
-          msg << " DEFAULT VALUE #{default}"
+          msg << "#{tracer.colorize(' DEFAULT VALUE ').violet}#{tracer.colorize(default).green}"
         end
       end
 
@@ -342,9 +352,7 @@ module RASN1
         encoded_id = unpack(encode_identifier_octets)
         data_length = raw_data.length
         encoded_length = unpack(raw_length)
-        msg = msg_type
-        msg << " (0x#{encoded_id}),"
-        msg << " len: #{data_length} (0x#{encoded_length})"
+        msg = "#{msg_type} #{parens_hex(encoded_id)}, #{length_specifier(data_length, encoded_length)}"
         msg << trace_data
       end
 
@@ -385,17 +393,17 @@ module RASN1
       end
 
       def msg_type(no_id: false)
-        msg = name.nil? ? +'' : "#{name} "
-        msg << "[ #{asn1_class_to_s}#{id} ] " unless no_id
+        msg = name.nil? ? +'' : "#{colorize_name(name)} "
+        msg << "#{colorize_id(id, asn1_class_to_s)} " unless no_id
         msg << if explicit?
-                 +'EXPLICIT '
+                 + "#{colorize_attribute('EXPLICIT')} "
                elsif implicit?
-                 +'IMPLICIT '
+                 +  "#{colorize_attribute('IMPLICIT')} "
                else
                  +''
                end
-        msg << type
-        msg << ' OPTIONAL' if optional?
+        msg << colorize_class(type)
+        msg << " #{colorize_attribute('OPTIONAL')}" if optional?
         msg
       end
 
@@ -631,15 +639,16 @@ module RASN1
       def raise_id_error(der)
         msg = name.nil? ? +'' : "#{name}: "
         msg << "Expected #{self2name} but get #{der2name(der)}"
+
         raise ASN1Error, msg
       end
 
       def self2name
-        name = "#{asn1_class.to_s.upcase} #{constructed? ? 'CONSTRUCTED' : 'PRIMITIVE'}"
+        name = "#{colorize_class(asn1_class.to_s.upcase)} #{colorize_attribute(constructed? ? 'CONSTRUCTED' : 'PRIMITIVE')}"
         if implicit? || explicit?
           name << ' 0x%X (0x%s)' % [id, bin2hex(encode_identifier_octets)]
         else
-          name << ' ' << self.class.type
+          name << ' ' << colorize_class(self.class.type)
         end
       end
 
@@ -649,7 +658,7 @@ module RASN1
         asn1_class, pc, id, id_size = Types.decode_identifier_octets(der)
         name = "#{asn1_class.to_s.upcase} #{pc.to_s.upcase}"
         type =  find_type(id)
-        name << " #{type.nil? ? '0x%X (0x%s)' % [id, bin2hex(der[0...id_size])] : type.encoded_type}"
+        name << " #{type.nil? ? "#{colorize(bin2hex(der[0...id_size])).magenta}" : colorize(type.encoded_type).green}"
       end
 
       def find_type(id)
