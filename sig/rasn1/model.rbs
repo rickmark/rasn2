@@ -9,7 +9,7 @@ module RASN1
   #    house [1] EXPLICIT INTEGER DEFAULT 0
   #  }
   # you may create your model like this:
-  #  class Record < RASN1::Model
+  #  class Record < Rasn2::Model
   #    sequence(:record,
   #             content: [integer(:id),
   #                       integer(:room, implicit: 0, optional: true),
@@ -18,7 +18,7 @@ module RASN1
   #
   # Since 0.17.0, content may also be defined through a block. This is strictly
   # equivalent to the +:content+ option:
-  #  class Record < RASN1::Model
+  #  class Record < Rasn2::Model
   #    sequence :record do
   #      integer :id
   #      integer :room, implicit: 0, optional: true
@@ -26,7 +26,7 @@ module RASN1
   #    end
   #  end
   # Blocks may be nested, and may use all model helpers (+#model+, +#wrapper+, +#sequence_of+, ...):
-  #  class PersonnelRecord < RASN1::Model
+  #  class PersonnelRecord < Rasn2::Model
   #    sequence :personnelRecord do
   #      utf8_string :name
   #      utf8_string :title
@@ -41,7 +41,7 @@ module RASN1
   #
   # === Parse a DER-encoded string
   #  record = Record.parse(der_string)
-  #  record[:id]             # => RASN1::Types::Integer
+  #  record[:id]             # => Rasn2::Types::Integer
   #  record[:id].value       # => Integer
   #  record[:id].to_i        # => Integer
   #  record[:id].asn1_class  # => Symbol
@@ -59,7 +59,7 @@ module RASN1
   #
   # == Create a more complex model
   # Models may be nested. For example:
-  #  class Record2 < RASN1::Model
+  #  class Record2 < Rasn2::Model
   #    sequence(:record2,
   #             content: [boolean(:rented, default: false),
   #                       model(:a_record, Record)])
@@ -72,7 +72,7 @@ module RASN1
   # or like this:
   #  record2 = Record2.new(rented: true, a_record: { id: 65537, room: 43 })
   # Same model, using a block:
-  #  class Record2 < RASN1::Model
+  #  class Record2 < Rasn2::Model
   #    sequence :record2 do
   #      boolean :rented, default: false
   #      model :a_record, Record
@@ -152,7 +152,7 @@ module RASN1
 
       # Update options of root element.
       # May be used when subclassing.
-      #  class Model1 < RASN1::Model
+      #  class Model1 < Rasn2::Model
       #    sequence :seq, implicit: 0,
       #             content: [bool(:bool), integer(:int)]
       #  end
@@ -304,10 +304,10 @@ module RASN1
     #  @return [Object,nil]
     # @return [Object,nil]
     # @example
-    #  class MyModel1 < RASN1::Model
+    #  class MyModel1 < Rasn2::Model
     #    sequence('seq', content: [boolean('boolean'), integer('int')])
     #  end
-    #  class MyModel2 < RASN1::Model
+    #  class MyModel2 < Rasn2::Model
     #    sequence('root', content: [sequence_of('list', MyModel1)])
     #  end
     #  model = MyModel2.new

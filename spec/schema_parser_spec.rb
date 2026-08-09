@@ -3,7 +3,7 @@
 require 'spec_helper'
 
 # rubocop:disable Metrics/BlockLength
-module RASN1
+module RASN2
   describe SchemaParser do
     describe '.parse' do
       context 'with PersonnelModule fixture' do
@@ -18,7 +18,7 @@ module RASN1
 
         it 'creates a Model subclass for PersonnelRecord' do
           klass = models['PersonnelRecord']
-          expect(klass).to be < RASN1::Model
+          expect(klass).to be < RASN2::Model
         end
 
         it 'defines the class in the given namespace' do
@@ -94,7 +94,7 @@ module RASN1
 
         it 'parses and creates a model' do
           models = SchemaParser.parse(schema, namespace: namespace)
-          expect(models['SimpleRecord']).to be < RASN1::Model
+          expect(models['SimpleRecord']).to be < RASN2::Model
 
           instance = models['SimpleRecord'].new(id: 42, flag: true)
           expect(instance[:id].value).to eq(42)
@@ -119,7 +119,7 @@ module RASN1
 
         it 'parses the module with explicit tags' do
           models = SchemaParser.parse(schema, namespace: namespace)
-          expect(models['ExplicitRecord']).to be < RASN1::Model
+          expect(models['ExplicitRecord']).to be < RASN2::Model
         end
       end
 
@@ -228,8 +228,8 @@ module RASN1
 
         it 'creates SEQUENCE OF model referencing another type' do
           models = SchemaParser.parse(schema, namespace: namespace)
-          expect(models['ItemList']).to be < RASN1::Model
-          expect(models['Item']).to be < RASN1::Model
+          expect(models['ItemList']).to be < RASN2::Model
+          expect(models['Item']).to be < RASN2::Model
         end
       end
 
@@ -251,7 +251,7 @@ module RASN1
 
         it 'creates a CHOICE model' do
           models = SchemaParser.parse(schema, namespace: namespace)
-          expect(models['MyChoice']).to be < RASN1::Model
+          expect(models['MyChoice']).to be < RASN2::Model
         end
       end
 
@@ -314,7 +314,7 @@ module RASN1
         fixture_path = File.join(__dir__, 'fixtures', 'personal_module.asn')
         models = SchemaParser.parse_file(fixture_path, namespace: namespace)
         expect(models.keys).to eq(['PersonnelRecord'])
-        expect(models['PersonnelRecord']).to be < RASN1::Model
+        expect(models['PersonnelRecord']).to be < RASN2::Model
       end
     end
   end

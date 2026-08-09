@@ -31,15 +31,15 @@ module RASN1
     def self.tracing_level: -> int
   end
 
-  # Trace RASN1 parsing to +io+.
+  # Trace Rasn2 parsing to +io+.
   # All parsing methods called in block are traced to +io+. Each ASN.1 element is
   # traced in a line showing element's id, its length and its data.
   # @param [IO] io
   # @example
-  #   RASN1.trace do
-  #     RASN1.parse("\x02\x01\x01")  # puts "INTEGER id: 2 (0x02), len: 1 (0x01), data: 0x01"
+  #   Rasn2.trace do
+  #     Rasn2.parse("\x02\x01\x01")  # puts "INTEGER id: 2 (0x02), len: 1 (0x01), data: 0x01"
   #   end
-  #   RASN1.parse("\x01\x01\xff")    # puts nothing onto STDOUT
+  #   Rasn2.parse("\x01\x01\xff")    # puts nothing onto STDOUT
   # @return [void]
   def self.trace: (?untyped io) { (untyped) -> untyped } -> untyped
 

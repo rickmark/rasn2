@@ -3,7 +3,7 @@
 require 'spec_helper'
 
 # rubocop:disable Metrics/BlockLength
-module RASN1
+module RASN2
   describe ValueNotation do
     let(:schema) { File.read(File.join(__dir__, 'fixtures', 'personal_module.asn')) }
     let(:namespace) { Module.new }
@@ -15,7 +15,7 @@ module RASN1
         let(:record) { ValueNotation.parse(instance_text, models: models) }
 
         it 'returns a Model instance' do
-          expect(record).to be_a(RASN1::Model)
+          expect(record).to be_a(RASN2::Model)
         end
 
         it 'sets the value name' do

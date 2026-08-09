@@ -2,7 +2,7 @@
 
 require_relative '../spec_helper'
 
-module RASN1::Types # rubocop:disable Metrics/ModuleLength
+module RASN2::Types # rubocop:disable Metrics/ModuleLength
   describe Base do # rubocop:disable Metrics/BlockLength
     describe '#initialize' do # rubocop:disable Metrics/BlockLength
       it 'sets value' do
@@ -24,8 +24,8 @@ module RASN1::Types # rubocop:disable Metrics/ModuleLength
       end
 
       it 'raises on unknown class' do
-        expect { Base.new(class: :unknown) }.to raise_error(RASN1::ClassError).with_message(/^Tag class should be a symbol among/)
-        expect { Base.new(class: 'not a symbol') }.to raise_error(RASN1::ClassError)
+        expect { Base.new(class: :unknown) }.to raise_error(RASN2::ClassError).with_message(/^Tag class should be a symbol among/)
+        expect { Base.new(class: 'not a symbol') }.to raise_error(RASN2::ClassError)
       end
 
       it 'sets optional option' do
@@ -91,7 +91,7 @@ module RASN1::Types # rubocop:disable Metrics/ModuleLength
 
       it 'raises on unexpected ID value' do
         bool = Boolean.new
-        expect { bool.parse!(unexpected_der) }.to raise_error(RASN1::ASN1Error)
+        expect { bool.parse!(unexpected_der) }.to raise_error(RASN2::ASN1Error)
           .with_message('Expected UNIVERSAL PRIMITIVE BOOLEAN but get UNIVERSAL PRIMITIVE INTEGER')
       end
 
@@ -147,7 +147,7 @@ module RASN1::Types # rubocop:disable Metrics/ModuleLength
       it 'raises on indefinite length with primitive types' do
         bool = Boolean.new
         der = "\x01\x80\xff\x00\x00".b
-        expect { bool.parse!(der) }.to raise_error(RASN1::ASN1Error)
+        expect { bool.parse!(der) }.to raise_error(RASN2::ASN1Error)
           .with_message('malformed BOOLEAN: indefinite length forbidden for primitive types')
       end
 
@@ -156,7 +156,7 @@ module RASN1::Types # rubocop:disable Metrics/ModuleLength
         let(:seq) { Sequence.new.tap { |s| s.value = [Boolean.new] } }
 
         it 'on DER encoding' do
-          expect { seq.parse!(der) }.to raise_error(RASN1::ASN1Error)
+          expect { seq.parse!(der) }.to raise_error(RASN2::ASN1Error)
         end
 
         it 'on BER encoding' do

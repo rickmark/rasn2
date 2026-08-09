@@ -3,7 +3,7 @@
 require 'spec_helper'
 
 # rubocop:disable Metrics/BlockLength,Layout/ClosingParenthesisIndentation
-module RASN1 # rubocop:disable Metrics/ModuleLength
+module RASN2 # rubocop:disable Metrics/ModuleLength
   module TestTrace
     DER_SEQUENCE = "\x30\x08\x02\x01\x01\x04\x03abc".b.freeze
     TRACE_SEQUENCE = <<~ENDOFTRACE
@@ -38,7 +38,7 @@ module RASN1 # rubocop:disable Metrics/ModuleLength
 
     context 'with color enabled' do
       around :example do |example|
-        RASN1.trace(io, color: true) do
+        RASN2.trace(io, color: true) do
           example.call
         end
         puts(io.string)
@@ -48,7 +48,7 @@ module RASN1 # rubocop:disable Metrics/ModuleLength
         Rainbow.new.wrap(input)
       end
 
-      include RASN1::Helpers::Colorize
+      include RASN2::Helpers::Colorize
 
       it 'traces a PRIMITIVE parsing' do
         Types::Integer.new.parse!("\x02\x01\x01".b)
@@ -198,8 +198,8 @@ module RASN1 # rubocop:disable Metrics/ModuleLength
         )
       end
 
-      it 'traces RASN1.parse' do
-        RASN1.parse(TestTrace::DER_SEQUENCE)
+      it 'traces RASN2.parse' do
+        RASN2.parse(TestTrace::DER_SEQUENCE)
         expect(io.string).to eq(<<~ENDOFDATA
             #{colorize_id(16)} #{colorize_class('SEQUENCE', 0x30)}, #{length_specifier(8)}
               #{colorize_id(2)} #{colorize_class('INTEGER', 0x02)}, #{length_specifier(1)}    #{int_with_hex(1)}
@@ -209,8 +209,8 @@ module RASN1 # rubocop:disable Metrics/ModuleLength
         )
       end
 
-      it 'traces RASN1.parse (explicit element)' do
-        RASN1.parse(TestTrace::DER_EXPLICIT_SEQUENCE)
+      it 'traces RASN2.parse (explicit element)' do
+        RASN2.parse(TestTrace::DER_EXPLICIT_SEQUENCE)
         expect(io.string).to eq(<<~ENDOFDATA
           #{colorize_id(4, 'CONTEXT')} #{colorize_class('BASE', 0xa4)}, #{length_specifier(10)}
             0000  30 08 02 01 01 04 03 61 62 63                    0......abc
@@ -221,7 +221,7 @@ module RASN1 # rubocop:disable Metrics/ModuleLength
       it 'traces long length' do
         os = Types::OctetString.new(value: 'a' * 256)
 
-        RASN1.parse(os.to_der)
+        RASN2.parse(os.to_der)
 
         expect(io.string).to eq(<<~ENDOFDATA
           #{colorize_id(4)} #{colorize_class('OCTET STRING', 0x04)}, #{length_specifier(256, 0x820100)}
@@ -247,7 +247,7 @@ module RASN1 # rubocop:disable Metrics/ModuleLength
 
       it 'colorizes long id' do
         os = Types::OctetString.new(implicit: 128, value: 'a')
-        RASN1.parse(os.to_der)
+        RASN2.parse(os.to_der)
         expect(io.string).to eq(<<~ENDOFDATA
             #{colorize_id(128, 'CONTEXT')} #{colorize_class('BASE', 0x9f8100)}, #{length_specifier(1)}
               0000  61                                               a
@@ -258,7 +258,7 @@ module RASN1 # rubocop:disable Metrics/ModuleLength
 
     context 'without color enabled' do
       around :example do |example|
-        RASN1.trace(io, color: false) do
+        RASN2.trace(io, color: false) do
           example.call
         end
         puts(io.string)
@@ -401,15 +401,15 @@ module RASN1 # rubocop:disable Metrics/ModuleLength
                              )
       end
 
-      it 'traces RASN1.parse' do
-        RASN1.parse(TestTrace::DER_SEQUENCE)
+      it 'traces RASN2.parse' do
+        RASN2.parse(TestTrace::DER_SEQUENCE)
 
         expect(io.string).to eq(TestTrace::TRACE_SEQUENCE)
       end
 
-      it 'traces RASN1.parse (explicit element)' do
+      it 'traces RASN2.parse (explicit element)' do
 
-        RASN1.parse(TestTrace::DER_EXPLICIT_SEQUENCE)
+        RASN2.parse(TestTrace::DER_EXPLICIT_SEQUENCE)
 
         expect(io.string).to eq(<<~ENDOFDATA
           [ CONTEXT 4 ] BASE (0xa4), len: 10 (0x0a)
@@ -421,7 +421,7 @@ module RASN1 # rubocop:disable Metrics/ModuleLength
       it 'traces long length' do
         os = Types::OctetString.new(value: 'a' * 256)
 
-        RASN1.parse(os.to_der)
+        RASN2.parse(os.to_der)
 
         expect(io.string).to eq(<<~ENDOFDATA
           [ 4 ] OCTET STRING (0x04), len: 256 (0x820100)
@@ -448,7 +448,7 @@ module RASN1 # rubocop:disable Metrics/ModuleLength
       it 'traces long id' do
         os = Types::OctetString.new(implicit: 128, value: 'a')
 
-        RASN1.parse(os.to_der)
+        RASN2.parse(os.to_der)
 
         expect(io.string).to eq(<<~ENDOFDATA
           [ CONTEXT 128 ] BASE (0x9f8100), len: 1 (0x01)
@@ -468,15 +468,15 @@ module RASN1 # rubocop:disable Metrics/ModuleLength
 
       context 'without color' do
       around :example do |example|
-        RASN1.trace(io) do
+        RASN2.trace(io) do
           example.run
         end
       end
 
       it 'traces with Boolean format' do
-        RASN1.parse("\x01\x01\xff")
-        RASN1.parse("\x01\x01\x01", ber: true)
-        RASN1.parse("\x01\x01\x00")
+        RASN2.parse("\x01\x01\xff")
+        RASN2.parse("\x01\x01\x01", ber: true)
+        RASN2.parse("\x01\x01\x00")
 
         expect(io.string).to eq(<<~ENDOFDATA
           [ 1 ] BOOLEAN (0x01), len: 1 (0x01)    TRUE (0xff)
@@ -489,7 +489,7 @@ module RASN1 # rubocop:disable Metrics/ModuleLength
 
       context 'with color' do
         around :example do |example|
-          RASN1.trace(io, color: true) do
+          RASN2.trace(io, color: true) do
             example.run
           end
         end
@@ -499,9 +499,9 @@ module RASN1 # rubocop:disable Metrics/ModuleLength
         end
 
         it 'traces with Boolean format' do
-          RASN1.parse("\x01\x01\xff")
-          RASN1.parse("\x01\x01\x01", ber: true)
-          RASN1.parse("\x01\x01\x00")
+          RASN2.parse("\x01\x01\xff")
+          RASN2.parse("\x01\x01\x01", ber: true)
+          RASN2.parse("\x01\x01\x00")
 
           expect(io.string).to eq(<<~ENDOFDATA
             #{colorize_id(1)} #{colorize_class('BOOLEAN', 1)}, #{length_specifier(1)}    #{colorize_bool(true, 0xff)}
@@ -520,7 +520,7 @@ module RASN1 # rubocop:disable Metrics/ModuleLength
 
         context 'without color' do
           around :example do |example|
-            RASN1.trace(io, color: false) do
+            RASN2.trace(io, color: false) do
               example.call
             end
             puts(io.string)
@@ -554,7 +554,7 @@ module RASN1 # rubocop:disable Metrics/ModuleLength
 
         context 'with color' do
           around :example do |example|
-            RASN1.trace(io, color: true) do
+            RASN2.trace(io, color: true) do
               example.call
             end
             puts(io.string)
@@ -603,7 +603,7 @@ module RASN1 # rubocop:disable Metrics/ModuleLength
       context 'without color' do
 
       around :example do |example|
-        RASN1.trace(io, color: false) do
+        RASN2.trace(io, color: false) do
           example.call
         end
         puts(io.string)
@@ -612,7 +612,7 @@ module RASN1 # rubocop:disable Metrics/ModuleLength
       it 'traces with Time format' do
         gt = GeneralizedTime.new(value: Time.utc(2022, 11, 23, 10, 54, 33))
 
-        RASN1.parse(gt.to_der)
+        RASN2.parse(gt.to_der)
 
         expect(io.string).to eq("[ 24 ] GeneralizedTime (0x18), len: 15 (0x0f)    2022-11-23 10:54:33 UTC\n")
       end
@@ -636,7 +636,7 @@ module RASN1 # rubocop:disable Metrics/ModuleLength
       context 'with color' do
 
         around :example do |example|
-          RASN1.trace(io, color: true) do
+          RASN2.trace(io, color: true) do
             example.call
           end
         end
@@ -648,7 +648,7 @@ module RASN1 # rubocop:disable Metrics/ModuleLength
         it 'traces with Time format' do
           gt = GeneralizedTime.new(value: Time.utc(2022, 11, 23, 10, 54, 33))
 
-          RASN1.parse(gt.to_der)
+          RASN2.parse(gt.to_der)
 
           time = +'    ' << colorize(Time.parse('2022-11-23 10:54:33 UTC')).dark.green
 
@@ -677,7 +677,7 @@ module RASN1 # rubocop:disable Metrics/ModuleLength
       let(:io) { StringIO.new }
 
       around :example do |example|
-        RASN1.trace(io) do
+        RASN2.trace(io) do
           example.run
         end
       end
@@ -685,7 +685,7 @@ module RASN1 # rubocop:disable Metrics/ModuleLength
       it 'traces with Time format' do
         ut = UtcTime.new(value: Time.utc(2022, 11, 23, 10, 54, 33))
 
-        RASN1.parse(ut.to_der)
+        RASN2.parse(ut.to_der)
 
         expect(io.string).to eq("[ 23 ] UTCTime (0x17), len: 13 (0x0d)    221123105433Z\n")
       end

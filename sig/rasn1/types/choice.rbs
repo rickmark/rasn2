@@ -23,7 +23,7 @@ module RASN1
     #
     # == Parse a CHOICE
     # Parsing a CHOICE set {#chosen} and set value to chosen type. If parsed string does
-    # not contain a type from CHOICE, a {RASN1::ASN1Error} is raised.
+    # not contain a type from CHOICE, a {Rasn2::ASN1Error} is raised.
     #   str = "\x04\x03abc"
     #   choice.parse! str
     #   choice.chosen        # => 2

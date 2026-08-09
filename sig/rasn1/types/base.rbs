@@ -32,15 +32,15 @@ module RASN1
     #  -- private tag
     #  PType ::= [PRIVATE 2] EXPLICIT INTEGER
     # These types may be defined as:
-    #  ctype = RASN1::Types::Integer.new(explicit: 0)                      # with explicit, default #asn1_class is :context
-    #  atype = RASN1::Types::Integer.new(explicit: 1, class: :application)
-    #  ptype = RASN1::Types::Integer.new(explicit: 2, class: :private)
+    #  ctype = Rasn2::Types::Integer.new(explicit: 0)                      # with explicit, default #asn1_class is :context
+    #  atype = Rasn2::Types::Integer.new(explicit: 1, class: :application)
+    #  ptype = Rasn2::Types::Integer.new(explicit: 2, class: :private)
     # Sometimes, an EXPLICIT type should be CONSTRUCTED. To do that, use +:constructed+
     # option:
-    #  ptype = RASN1::Types::Integer.new(explicit: 2, class: :private, constructed: true)
+    #  ptype = Rasn2::Types::Integer.new(explicit: 2, class: :private, constructed: true)
     #
     # Implicit tagged values may also be defined:
-    #  ctype_implicit = RASN1::Types::Integer.new(implicit: 0)
+    #  ctype_implicit = Rasn2::Types::Integer.new(implicit: 0)
     # @author Sylvain Daubert
     class Base
       self.@type: untyped
@@ -287,7 +287,7 @@ module RASN1
       def set_default: (untyped default) -> untyped
 
       # handle undocumented option +:tag_value+, used internally by
-      # {RASN1.parse} to parse non-universal class tags.
+      # {Rasn2.parse} to parse non-universal class tags.
       def set_tag: (untyped options) -> untyped
 
       # Convert a tag id to an integer.

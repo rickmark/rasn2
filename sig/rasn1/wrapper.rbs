@@ -2,7 +2,7 @@ module RASN1
   # This class is used to wrap a {Types::Base} or {Model} instance to force its options.
   #
   # == Usage
-  # This class may be used to wrap another RASN1 object by 4 ways:
+  # This class may be used to wrap another Rasn2 object by 4 ways:
   # * wrap an object to modify its options,
   # * implicitly wrap an object (i.e. change its tag),
   # * explicitly wrap an object (i.e wrap the object in another explicit ASN.1 tag),
@@ -10,15 +10,15 @@ module RASN1
   #
   # @example Wrapping object
   #   # object to wrap
-  #   int = RASN1::Types::Integer.new(implicit: 1)    # its tag is 0x81
+  #   int = Rasn2::Types::Integer.new(implicit: 1)    # its tag is 0x81
   #   # simple wrapper, change an option
-  #   wrapper = RASN1::Wrapper.new(int, default: 1)
+  #   wrapper = Rasn2::Wrapper.new(int, default: 1)
   #   # implicit wrapper
-  #   wrapper = RASN1::Wrapper.new(int, implicit: 3)  # wrapped int tag is now 0x83
+  #   wrapper = Rasn2::Wrapper.new(int, implicit: 3)  # wrapped int tag is now 0x83
   #   # explicit wrapper
-  #   wrapper = RASN1::Wrapper.new(int, explicit: 4)  # int tag is always 0x81, but it is wrapped in a 0x84 tag
+  #   wrapper = Rasn2::Wrapper.new(int, explicit: 4)  # int tag is always 0x81, but it is wrapped in a 0x84 tag
   # @example Wrapping a choice to make it recursive
-  #  class RecursiveChoice < RASN1::Model
+  #  class RecursiveChoice < Rasn2::Model
   #    choice :choice,
   #           content: [
   #             integer(:value, implicit: 1),

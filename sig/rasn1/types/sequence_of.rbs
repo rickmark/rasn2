@@ -9,28 +9,28 @@ module RASN1
     #  Integers ::= SEQUENCE OF INTEGER
     # do:
     #  # Create a SEQUENCE OF INTEGER
-    #  seqof = RASN1::Types::SequenceOf.new(RASN1::Types::Integer)
+    #  seqof = Rasn2::Types::SequenceOf.new(Rasn2::Types::Integer)
     #  # Set integer values
-    #  seqof.value = [1, 2, 3, 4].map { |i| RASN1::Types::Integer.new(value: i) }
-    #  seqof << 5   # infer a RASN1::Types::Integer with given value
+    #  seqof.value = [1, 2, 3, 4].map { |i| Rasn2::Types::Integer.new(value: i) }
+    #  seqof << 5   # infer a Rasn2::Types::Integer with given value
     #
     # == Use with {Constructed} types
     # SEQUENCE OF may be used to create sequence of composed types. For example:
-    #  composed_type = RASN1::Types::Sequence.new
-    #  commposed_type.value = [RASN1::Types::Integer,
-    #                          RASN1::Types::OctetString]
-    #  seqof = RASN1::Types::SequenceOf.new(composed_type)
+    #  composed_type = Rasn2::Types::Sequence.new
+    #  commposed_type.value = [Rasn2::Types::Integer,
+    #                          Rasn2::Types::OctetString]
+    #  seqof = Rasn2::Types::SequenceOf.new(composed_type)
     #  seqof << [0, 'data0']
     #  seqof << [1, 'data1']
     #
     # == Use with {Model}
     # SEQUENCE OF may also be used with a Model type:
-    #  class MyModel < RASN1::Model
+    #  class MyModel < Rasn2::Model
     #    sequence :seq,
     #             content: [boolean(:bool), integer(:int)]
     #  end
     #
-    #  seqof = RASN1::Types::SequenceOf.new(:record, MyModel)
+    #  seqof = Rasn2::Types::SequenceOf.new(:record, MyModel)
     #  # set values
     #  seqof << { bool: true, int: 12 }
     #  seqof << { bool: false, int: 65535 }

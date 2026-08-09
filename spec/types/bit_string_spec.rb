@@ -2,7 +2,7 @@
 
 require_relative '../spec_helper'
 
-module RASN1::Types # rubocop:disable Metrics/ModuleLength
+module RASN2::Types # rubocop:disable Metrics/ModuleLength
   describe BitString do # rubocop:disable Metrics/BlockLength
     describe '.type' do
       it 'gets ASN.1 type' do
@@ -20,7 +20,7 @@ module RASN1::Types # rubocop:disable Metrics/ModuleLength
       end
 
       it 'raises if bit_length option is not set when default value is set' do
-        expect { BitString.new(default: '123') }.to raise_error(RASN1::ASN1Error)
+        expect { BitString.new(default: '123') }.to raise_error(RASN2::ASN1Error)
       end
     end
 
@@ -28,7 +28,7 @@ module RASN1::Types # rubocop:disable Metrics/ModuleLength
       it 'raises if bit length is not set' do
         bs = BitString.new
         bs.value = 'NOP'
-        expect { bs.to_der }.to raise_error(RASN1::ASN1Error)
+        expect { bs.to_der }.to raise_error(RASN2::ASN1Error)
       end
 
       it 'generates a DER string with unfrozen strings' do

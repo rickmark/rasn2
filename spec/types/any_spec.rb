@@ -3,17 +3,17 @@
 
 require_relative '../spec_helper'
 
-class AnyModel < RASN1::Model
+class AnyModel < RASN2::Model
   sequence :seq,
            content: [any(:data), objectid(:id)]
 end
 
-class AnyModelOptional < RASN1::Model
+class AnyModelOptional < RASN2::Model
   sequence :seq,
            content: [any(:data, optional: true), objectid(:id)]
 end
 
-module RASN1::Types
+module RASN2::Types
   describe Any do # rubocop:disable Metrics/BlockLength
     let(:os_der) { "\x30\x0a\x04\x03abc\x06\x03\x2a\x03\x04".b }
     let(:int_der) { "\x30\x09\x02\x02\x00\x80\x06\x03\x2a\x03\x05".b }
@@ -67,7 +67,7 @@ module RASN1::Types
       end
 
       it 'raises on empty string' do
-        expect { Any.new.parse!('') }.to raise_error(RASN1::ASN1Error)
+        expect { Any.new.parse!('') }.to raise_error(RASN2::ASN1Error)
       end
 
       it 'returns 0 on empty string when optional' do

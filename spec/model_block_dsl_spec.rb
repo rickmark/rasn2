@@ -3,7 +3,7 @@
 require 'spec_helper'
 
 module BlockDslTest
-  class BlockModelTest < RASN1::Model
+  class BlockModelTest < RASN2::Model
     sequence :record do
       integer :id
       integer :room, implicit: 0, optional: true
@@ -11,14 +11,14 @@ module BlockDslTest
     end
   end
 
-  class BlockModelTest2 < RASN1::Model
+  class BlockModelTest2 < RASN2::Model
     sequence :record2 do
       boolean :rented
       model :a_record, BlockModelTest
     end
   end
 
-  class BlockNestedModel < RASN1::Model
+  class BlockNestedModel < RASN2::Model
     sequence :root do
       boolean :bool
       sequence :seq do
@@ -28,33 +28,33 @@ module BlockDslTest
     end
   end
 
-  class BlockOfModel < RASN1::Model
+  class BlockOfModel < RASN2::Model
     sequence :super do
       sequence_of :of, BlockModelTest
     end
   end
 
-  class BlockChoiceModel < RASN1::Model
+  class BlockChoiceModel < RASN2::Model
     choice :choice do
       integer :id
       model :a_record, BlockModelTest
     end
   end
 
-  class BlockMixedModel < RASN1::Model
+  class BlockMixedModel < RASN2::Model
     sequence :mixed, content: [boolean(:bool)] do
       integer :int
     end
   end
 
-  class BlockModelWithWrapperArg < RASN1::Model
+  class BlockModelWithWrapperArg < RASN2::Model
     sequence :seq do
       integer :superid
       wrapper(model(:a_record, BlockModelTest), explicit: 6)
     end
   end
 
-  class BlockModelWithWrapperBlock < RASN1::Model
+  class BlockModelWithWrapperBlock < RASN2::Model
     sequence :seq do
       integer :superid
       wrapper explicit: 6 do
@@ -63,13 +63,13 @@ module BlockDslTest
     end
   end
 
-  class BlockWrapperRootModel < RASN1::Model
+  class BlockWrapperRootModel < RASN2::Model
     wrapper implicit: 5 do
       model :a_record, BlockModelTest
     end
   end
 
-  class BlockObjectIdAndAnyModel < RASN1::Model
+  class BlockObjectIdAndAnyModel < RASN2::Model
     sequence :attributeTypeAndValue do
       objectid :type
       any :value
@@ -77,7 +77,7 @@ module BlockDslTest
   end
 end
 
-module RASN1
+module RASN2
   describe Model do
     context '(content defined through a block)' do
       let(:simple_der) { "\x30\x0e\x02\x03\x01\x00\x01\x80\x01\x2b\x81\x04\x02\x02\x12\x34".b }

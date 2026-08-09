@@ -3,7 +3,7 @@
 require_relative '../spec_helper'
 
 # rubocop:disable Metrics/BlockLength
-module RASN1::Types
+module RASN2::Types
   describe Constructed do
     it 'has a PC bit set' do
       expect(Sequence.new.constructed?).to eq(true)

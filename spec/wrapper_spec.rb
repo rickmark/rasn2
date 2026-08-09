@@ -3,7 +3,7 @@
 require_relative 'spec_helper'
 
 # rubocop:disable Metrics/BlockLength
-module RASN1 # rubocop:disable Metrics/ModuleLength
+module RASN2 # rubocop:disable Metrics/ModuleLength
   include TestModel
 
   module TestWrapper
@@ -61,7 +61,7 @@ module RASN1 # rubocop:disable Metrics/ModuleLength
       end
 
       it 'raises if wrapper is explicit and implicit' do
-        expect { Wrapper.new(Types::Null.new, explicit: 1, implicit: 2) }.to raise_error(RASN1::Error)
+        expect { Wrapper.new(Types::Null.new, explicit: 1, implicit: 2) }.to raise_error(RASN2::Error)
       end
 
       it 'accepts a string tag for explicit (4CC-style)' do

@@ -4,7 +4,7 @@ require_relative '../spec_helper'
 
 module RASN1Test
   module SeqOf
-    class SimpleModel < RASN1::Model
+    class SimpleModel < RASN2::Model
       sequence :seq,
                content: [boolean(:bool), integer(:int)]
     end
@@ -12,7 +12,7 @@ module RASN1Test
 end
 
 # rubocop:disable Metrics/BlockLength
-module RASN1
+module RASN2
   module Types # rubocop:disable Metrics/ModuleLength
     describe SequenceOf do
       before(:each) do
