@@ -94,6 +94,9 @@ module RASN2
 
       describe '#inspect' do
         let(:inspect_str) { @seq.inspect }
+        after do
+          puts inspect_str
+        end
 
         it 'prints a line per value' do
           expect(inspect_str.split("\n").size).to eq(4)

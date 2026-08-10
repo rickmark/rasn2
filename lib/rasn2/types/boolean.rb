@@ -50,7 +50,7 @@ module RASN2
       def trace_data
         return super if explicit?
 
-        '    ' + colorize_bool(raw_data != "\x00".b, raw_data.unpack1('H*'))
+        "    #{colorize_bool(raw_data != "\x00".b, raw_data)}"
       end
     end
   end

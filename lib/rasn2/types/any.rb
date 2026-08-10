@@ -31,7 +31,8 @@ module RASN2
       # @param [Boolean] ber if +true+, accept BER encoding
       # @return [Integer] total number of parsed bytes
       def parse!(der, ber: false)
-        total_length, _data = do_parse(der, ber: ber)
+        total_length, data = do_parse(der, ber: ber)
+        @value = data
         total_length
       end
 
@@ -40,13 +41,16 @@ module RASN2
       def trace
         return trace_any if value?
 
-        msg_type(no_id: true) << " #{colorize_nil}"
+        parts = []
+        parts << msg_type(no_id: true)
+        parts << colorize_nil
+        parts.reject(&:empty?).join(' ')
       end
 
       # @private
       # @see Types::Base#do_parse
       def do_parse(der, ber: false)
-        asn1_class, pc, id, id_size = Types.decode_identifier_octets(der)
+        asn1_class, _pc, id, id_size = Types.decode_identifier_octets(der)
         @id = id
         @asn1_class = asn1_class
 
@@ -61,18 +65,17 @@ module RASN2
 
         @no_value = false
         real_value = der[0, total_length].to_s
-        if constructed?
-          @value = RASN2.parse(real_value, ber: ber)
-        else
-          @value = real_value
-        end
-
+        @value = if constructed?
+                   RASN2.parse(real_value, ber: ber)
+                 else
+                   real_value
+                 end
 
         [total_length, @value]
       end
 
       def trace_any
-        msg_type(no_id: false) << trace_data(value)
+        "#{msg_type(no_id: false)}#{trace_data(value)}"
       end
     end
   end

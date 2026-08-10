@@ -34,11 +34,8 @@ module RASN2
         end
       end
 
-      # @param [Integer] level
-      # @return [String]
-      def inspect(level=0)
-        str = common_inspect(level)
-        str << " #{value.inspect} (bit length: #{bit_length})"
+      def inspect_value
+        "(bit length: #{bit_length}): #{value.inspect}"
       end
 
       # Same as {Base#can_build?} but also check bit_length

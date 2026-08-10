@@ -107,22 +107,17 @@ module RASN2
 
       # @param [::Integer] level
       # @return [String]
-      def inspect(level=0, color: true)
-        str = common_inspect(level, color: color)
-        str << "\n"
-        level = level.abs + 1
-        @value.each do |item|
-          case item
-          when Base, Model
-            next if item.optional? && item.value.nil?
-
-            str << item.inspect(level, color: color)
-            str << "\n" unless str.end_with?("\n")
-          else
-            str << ('  ' * level) << "#{item.inspect(color: color)}\n"
-          end
+      def inspect(level=0, color: false)
+        new_level = level.abs + 1
+        begin_colorizer(color)
+        name = @name ? "#{colorize_name(@name)} " : ''
+        lines = []
+        lines << "#{"  " * level}#{name}SEQUENCE OF:"
+        lines += @value.map do |item|
+          item.inspect(new_level, color: color)
         end
-        str
+        end_colorizer
+        lines.join("\n")
       end
 
       # Make sequence of value from +der+ string

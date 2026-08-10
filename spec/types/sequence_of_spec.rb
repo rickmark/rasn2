@@ -146,18 +146,18 @@ module RASN2
         it 'gets inspect string' do
           @seqof << [true, 12, 'abcd']
           @seqof << [false, 65_534, 'nop']
-          expect(@seqof.inspect(color: false)).to eq(<<~EOSEQOF
+          expect(@seqof.inspect(color: false)).to eq(<<~ENDOFSEQUENCE
             SEQUENCE OF:
               SEQUENCE:
-                BOOLEAN: true DEFAULT true
-                INTEGER: 12
-                OCTET STRING: "abcd"
+                BOOLEAN true DEFAULT VALUE true
+                INTEGER 12
+                OCTET STRING "abcd"
               SEQUENCE:
-                BOOLEAN: false DEFAULT true
-                INTEGER: 65534
-                OCTET STRING: "nop"
-          EOSEQOF
-                                      )
+                BOOLEAN false DEFAULT VALUE true
+                INTEGER 65534
+                OCTET STRING "nop"
+            ENDOFSEQUENCE
+          )
 
           seqof = SequenceOf.new(RASN1Test::SeqOf::SimpleModel, name: :seqof)
           seqof << RASN1Test::SeqOf::SimpleModel.new(bool: true, int: 1)

@@ -108,25 +108,28 @@ module RASN2::Types
       end
     end
 
-    describe '#inspect' do
+    shared_examples :inspect do |color|
       before(:each) do
         @choice = Choice.new
         @choice.value = [Integer.new, OctetString.new]
       end
 
       it 'gets inspect string' do
-        expect(@choice.inspect).to eq('CHOICE: not chosen!')
+        expect(@choice.inspect(color: color)).to eq('CHOICE: not chosen!')
         @choice.chosen = 0
-        expect(@choice.inspect).to eq("CHOICE:\n  #{@choice.value[0].inspect}")
+        expect(@choice.inspect(color: color)).to eq("CHOICE:\n  #{@choice.value[0].inspect}")
       end
 
       it 'gets inspect string with name' do
         @choice.instance_eval { @name = :ch }
-        expect(@choice.inspect).to eq('ch CHOICE: not chosen!')
+        expect(@choice.inspect(color: color)).to eq('ch CHOICE: not chosen!')
         @choice.chosen = 0
-        expect(@choice.inspect).to eq("ch CHOICE:\n  #{@choice.value[0].inspect}")
+        expect(@choice.inspect(color: color)).to eq("ch CHOICE:\n  #{@choice.value[0].inspect}")
       end
     end
+
+    it_behaves_like :inspect, true
+    it_behaves_like :inspect, false
   end
 end
 # rubocop:enable Metrics/BlockLength

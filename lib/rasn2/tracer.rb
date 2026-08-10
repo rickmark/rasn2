@@ -37,7 +37,8 @@ module RASN2
     # @param [String] msg
     # @return [void]
     def trace(msg)
-      @io.puts(indent << msg)
+      indented = msg.split("\n").map { |line| indent + line }.join("\n")
+      @io.puts(indented)
     end
 
     # Return identation for given +level+. If +nil+, use {#tracing_level}.
@@ -45,7 +46,7 @@ module RASN2
     # @return [String]
     def indent(level=nil)
       level ||= @tracing_level
-      '  ' * level
+      "  " * level
     end
   end
 

@@ -446,6 +446,7 @@ module RASN2 # rubocop:disable Metrics/moduleLength
 
     it 'parses a recursive model' do
       recursive = TestModel::RecursiveModel.parse("\x82\x07\x82\x05\x81\x03abc".b)
+      puts(recursive)
       expect(recursive[:recursive].chosen).to eq(1)
       expect(recursive[:recursive].chosen_value).to be_a(TestModel::RecursiveModel)
       expect(recursive[:recursive].chosen_value.chosen_value).to be_a(TestModel::RecursiveModel)

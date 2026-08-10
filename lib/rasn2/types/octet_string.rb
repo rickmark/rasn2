@@ -15,11 +15,8 @@ module RASN2
       # OctetString id value
       ID = 4
 
-      # @param [::Integer] level
-      # @return [String]
-      def inspect(level=0, color: true)
-        str = common_inspect(level, color: color)
-        str << " #{colorize(value.inspect).blue}"
+      def inspect_value
+        value.inspect
       end
 
       # Make string value from +der+ string. Force encoding to UTF-8

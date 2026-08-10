@@ -129,6 +129,8 @@ module RASN2
     # @private Sequence types
     SEQUENCE_TYPES = [Types::Sequence, Types::SequenceOf, Types::Set, Types::SetOf].freeze
 
+    include Helpers::Colorize
+
     # Define helper methods to define models
     module Accel # rubocop:disable Metrics/ModuleLength
       # @return [Hash]
@@ -567,7 +569,9 @@ module RASN2
     # @return [Integer] number of parsed bytes
     # @raise [ASN1Error] error on parsing
     def parse!(der, ber: false)
-      root.parse!(der, ber: ber)
+      result = root.parse!(der, ber: ber)
+      result.model = self if result.respond_to? :model=
+      result
     end
 
     # @private
@@ -634,7 +638,7 @@ module RASN2
 
     # @return [String]
     def inspect(level=0, color: true)
-      "#{'  ' * level}(#{type}) #{root.inspect(-level)}"
+      root.inspect(level, color: color, kind: type)
     end
 
     # Objects are equal if they have same class AND same DER

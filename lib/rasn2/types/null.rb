@@ -10,9 +10,10 @@ module RASN2
 
       # @return [String]
       def inspect(level=0, color: true)
-        str = common_inspect(level)[0..-2] # remove terminal ':'
-        str << ' OPTIONAL' if optional?
-        str
+        begin_colorizer(color)
+        result = common_inspect(level)
+        end_colorizer
+        result
       end
 
       # @return [Boolean]

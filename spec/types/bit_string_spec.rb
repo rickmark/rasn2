@@ -109,16 +109,38 @@ module RASN2::Types # rubocop:disable Metrics/ModuleLength
       end
     end
 
-    describe '#inspect' do
+
+
+
+    shared_examples :inspect do |color|
+      COLORIZE = color
+
+      def colorize(msg)
+        instance = Rainbow.new
+        instance.enabled = COLORIZE
+        instance.wrap(msg)
+      end
+
+      def clense(msg)
+        msg.gsub(/\e\[([;\d]+)?m/, '')
+      end
+
+      include RASN2::Helpers::Colorize
+
       it 'gets inspect string' do
         bs = BitString.new(value: 'abcd', bit_length: 30)
-        expect(bs.inspect).to eq('BIT STRING: "abcd" (bit length: 30)')
+        expect(bs.inspect(color: color)).to eq('BIT STRING (bit length: 30): "abcd"')
       end
 
       it 'gets inspect string with name' do
         bs = BitString.new(value: 'abcd', name: :bs, bit_length: 30)
-        expect(bs.inspect).to eq('bs BIT STRING: "abcd" (bit length: 30)')
+        expect(bs.inspect(color: color)).to eq(clense("#{colorize_name('bs')} #{colorize_class('BIT STRING')} (bit length: 30): \"abcd\""))
       end
     end
+
+    it_behaves_like :inspect, true
+    it_behaves_like :inspect, false
+
+
   end
 end

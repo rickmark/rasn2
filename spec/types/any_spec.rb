@@ -76,26 +76,34 @@ module RASN2::Types
       end
     end
 
-    describe '#inspect' do
+    shared_examples :inspect do |color|
       let(:any) { Any.new }
 
       it 'gets a String with NULL when value is nil' do
-        expect(any.inspect).to eq('(ANY) NULL')
+        expect(any.inspect(color: false)).to eq('(ANY) NULL')
       end
 
       it 'gets a String with real type' do
         any.value = OctetString.new(value: '1234')
-        expect(any.inspect).to eq('(ANY) OCTET STRING: "1234"')
+        expect(any.inspect(color: color)).to eq('(ANY) OCTET STRING: "1234"')
         any.value = BitString.new(value: '1235', bit_length: 30)
-        expect(any.inspect).to eq('(ANY) BIT STRING: "1235"')
+        expect(any.inspect(color: color)).to eq('(ANY) BIT STRING: "1235"')
         any.value = Integer.new(value: 45)
-        expect(any.inspect).to eq('(ANY) INTEGER: 45')
+        expect(any.inspect(color: color)).to eq('(ANY) INTEGER: 45')
       end
 
       it 'gets a String with an unknown type' do
         any.value = OctetString.new(value: '1234').to_der
-        expect(any.inspect).to eq("(ANY) #{any.value.inspect}")
+        expect(any.inspect(color: color)).to eq("ANY \"1234\"")
       end
+    end
+
+    context 'with color' do
+      it_behaves_like :inspect, true
+    end
+
+    context 'without color' do
+      it_behaves_like :inspect, false
     end
   end
 end

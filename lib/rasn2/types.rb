@@ -15,6 +15,7 @@ module RASN2
       return @primitives unless @primitives.empty?
 
       @primitives = self.constants.map { |c| Types.const_get(c) }
+                        .grep(Class)
                         .select { |klass| klass < Primitive }
     end
 
@@ -24,6 +25,7 @@ module RASN2
       return @constructed unless @constructed.empty?
 
       @constructed = self.constants.map { |c| Types.const_get(c) }
+                         .grep(Class)
                          .select { |klass| klass < Constructed }
     end
 

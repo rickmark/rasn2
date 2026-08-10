@@ -201,13 +201,6 @@ module RASN2
       !constructed?
     end
 
-    # @param [::Integer] level
-    # @return [String]
-    def inspect(level=0)
-      return super() unless explicit?
-
-      @explicit_wrapper.inspect(level) << ' ' << super()
-    end
 
     private
 

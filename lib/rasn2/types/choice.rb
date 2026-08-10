@@ -126,12 +126,12 @@ module RASN2
 
       # @param [::Integer] level
       # @return [String]
-      def inspect(level=0)
+      def inspect(level=0, color: true)
         str = common_inspect(level)
         str << if defined?(@chosen) && value?
-                 "\n#{@value[@chosen].inspect(level + 1)}"
+                 @value[@chosen].inspect(level + 1)
                else
-                 ' not chosen!'
+                 'not chosen!'
                end
       end
 

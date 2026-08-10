@@ -16,6 +16,10 @@ module RASN2
       def self.type
         'IA5String'
       end
+
+      def inspect_value
+        colorize_value(@value.inspect)
+      end
     end
   end
 end

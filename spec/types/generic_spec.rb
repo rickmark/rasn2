@@ -287,8 +287,13 @@ module RASN2
       end
 
       describe '#constructed?' do
-        it 'is constructed' do
+        it 'is not constructed' do
           generic = Tag.new(tag: 5)
+          expect(generic.constructed?).to be false
+        end
+
+        it 'is constructed' do
+          generic = Tag.new(tag: 5, constructed: true)
           expect(generic.constructed?).to be true
         end
       end

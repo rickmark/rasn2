@@ -47,6 +47,8 @@ module RASN2
     class Base # rubocop:disable Metrics/ClassLength
       ID = nil
 
+      attr_accessor :model
+
       # Allowed ASN.1 classes
       CLASSES = {
         universal: 0x00,
@@ -56,7 +58,7 @@ module RASN2
       }.freeze
 
       def colorize(msg)
-        tracer ? tracer.colorize(msg) : Rainbow.new.wrap(msg)
+        tracer ? tracer.colorize(msg) : self.colorizer.wrap(msg)
       end
 
       include RASN2::Helpers::Colorize
@@ -202,7 +204,7 @@ module RASN2
       end
 
       def private?
-        self.class == Types::Tag
+        self.instance_of?(Types::Tag)
       end
 
       # @abstract This method SHOULD be partly implemented by subclasses, which
@@ -260,28 +262,43 @@ module RASN2
         value_to_der.size
       end
 
+      def attributes
+        attributes = []
+        attributes << 'OPTIONAL' if optional?
+        attributes << 'CONSTRUCTED' if constructed? && !(self.class < Constructed)
+        attributes << 'EXPLICIT' if explicit?
+        attributes << 'IMPLICIT' if implicit?
+        attributes
+      end
+
       # @param [Integer] level
       # @return [String]
-      def inspect(level=0, color: true)
-        str = common_inspect(level, color: color)
+      def inspect(level=0, color: false)
+        parts = []
         new_level = level.abs + 1
 
-        case @value
-        when Array
-          @value.each do |item|
-            str << "\n#{item.inspect(new_level, color: color)}"
+        begin_colorizer(color)
+        parts << common_inspect(level, color: color)
+
+        if constructed?
+          if @value.is_a?(Array)
+            @value.each do |value|
+              parts << "\n"
+              parts << value.inspect(new_level, color: color).to_s
+            end
+          else
+            parts << "\n"
+            if @value.is_a?(Base)
+              parts << @value.inspect(new_level, color: color).to_s
+            else
+              @value.inspect.to_s
+            end
           end
         else
-          if @value.respond_to?(:constructed?) && @value.constructed?
-            str << "#{@value.inspect(new_level, color: color)}"
-          else
-            str << ' ' << inspect_value
-            str << ' OPTIONAL' if optional?
-            str << " DEFAULT #{@default}" unless @default.nil?
-          end
+          parts << inspect_value unless inspect_value.empty?
         end
-
-        str
+        end_colorizer
+        parts.reject(&:empty?).join(' ')
       end
 
       # Objects are equal if they have same class AND same DER
@@ -323,12 +340,14 @@ module RASN2
       def trace
         return trace_real if value?
 
-        msg = msg_type
-        if default.nil? # rubocop:disable Style/ConditionalAssignment
-          msg << " #{colorize_nil}"
-        else
-          msg << " #{colorize_attribute('DEFAULT VALUE')} #{colorize_default(value)}"
-        end
+        parts = [msg_type]
+        parts << if default.nil?
+                   colorize_nil
+                 else
+                   colorize_default(value)
+                 end
+
+        parts.reject(&:empty?).join(' ')
       end
 
       # @private Parse tage and length from binary string. Return data length and binary data.
@@ -366,42 +385,28 @@ module RASN2
         @value = der
       end
 
-      private
-
       def trace_real
-        encoded_id = unpack(encode_identifier_octets)
+        raw_id = encode_identifier_octets
+        encoded_id = raw_id.unpack1('w*')
         data_length = raw_data.length
-        encoded_length = unpack(raw_length)
-        msg = "#{msg_type} #{parens_hex(encoded_id)}, #{length_specifier(data_length, encoded_length)}"
+        encoded_length = raw_length.unpack1('w*')
+        parts = [msg_type(raw_id.unpack1('H*').to_i(16), encoded_id)]
+        msg = parts.reject(&:empty?).join(' ')
+        msg << ", #{length_specifier(data_length, encoded_length)}"
         msg << trace_data
       end
 
       def trace_data(data=nil)
-        byte_count = 0
         data ||= raw_data
-
-        lines = []
-        str = ''
-        data.each_byte do |byte|
-          if (byte_count % 16).zero?
-            str = trace_format_new_data_line(byte_count)
-            lines << str
-          end
-          str[compute_trace_index(byte_count, 3), 2] = '%02x' % byte
-          str[compute_trace_index(byte_count, 1, 49)] = byte.between?(32, 126) ? byte.chr : '.'
-          byte_count += 1
+        format_string = data.size > 65_535 ? '%08X' : '%04X'
+        lines = data.bytes.each_slice(16).map.with_index do |chunk, index|
+          offset = format_string % (index * 16)
+          hex = chunk.map { |b| '%02x' % b }.join(' ')
+          hex_padded = hex.ljust(47) # 16*2 hex digits + 15 spaces
+          ascii = chunk.map { |b| (32..126).cover?(b) ? b.chr : '.' }.join
+          "  #{offset}  #{hex_padded}  |#{ascii}|"
         end
-        lines.map(&:rstrip).join << "\n"
-      end
-
-      def trace_format_new_data_line(count)
-        head_line = RASN2.tracer.indent(RASN2.tracer.tracing_level + 1)
-        ("\n#{head_line}%04x " % count) << ' ' * 68
-      end
-
-      def compute_trace_index(byte_count, byte_count_mul=1, offset=0)
-        base_idx = 7 + RASN2.tracer.indent(RASN2.tracer.tracing_level + 1).length
-        base_idx + offset + (byte_count % 16) * byte_count_mul
+        "\n#{lines.join("\n")}"
       end
 
       def unpack(binstr)
@@ -409,31 +414,16 @@ module RASN2
       end
 
       def asn1_class_to_s
-        case asn1_class
-        when :universal
-          ''
-        when :application
-          'APPLICATION '
-        when :context
-          'CONTEXT '
-        when :private
-          'PRIVATE '
-        end
+        asn1_class.to_s.upcase
       end
 
-      def msg_type(no_id: false)
-        msg = name.nil? ? +'' : "#{colorize_name(name)} "
-        msg << "#{colorize_id(id, asn1_class_to_s)}" if id && !no_id
-        msg << if explicit?
-                 + " #{colorize_attribute('EXPLICIT')}"
-               elsif implicit?
-                 +  " #{colorize_attribute('IMPLICIT')}"
-               else
-                 +''
-               end
-        msg << " #{colorize_class(type)}"
-        msg << " #{colorize_attribute('OPTIONAL')}" if optional?
-        msg
+      def msg_type(raw_id=nil, _encoded_id=nil, no_id: false)
+        parts = []
+        parts << colorize_name(name) unless name.nil?
+        real_id = no_id ? nil : raw_id || id
+        parts << colorize_id(id, asn1_class_to_s) if real_id
+        parts << colorize_class(type, real_id, *self.attributes)
+        parts.reject(&:empty?).join(' ')
       end
 
       def pc_bit
@@ -446,25 +436,32 @@ module RASN2
         end
       end
 
-      def common_inspect(level=0, color: true)
-        lvl = [level, 0].max
-        str = '  ' * lvl
-        str << "#{colorize_name(@name)} " if @name
-        str << "#{colorize_id(id, asn1_class_to_s)}" if id
-        str << " #{colorize_attribute('CONSTRUCTED')}" if constructed?
-        str << " #{colorize_attribute('OPTIONAL')}" if optional?
-        str << " #{colorize_attribute('IMPLICIT')}" if implicit?
-        str << " #{colorize_attribute('EXPLICIT')}" if explicit?
-        str << " #{colorize(type).cyan}:"
-        str
+      def universal?
+        @asn1_class == :universal
+      end
+
+      def common_inspect(level=0, color: false)
+        begin_colorizer(color)
+        parts = []
+        parts << "(#{model})" if model
+        parts << colorize_name(name) if name
+        parts << colorize_id(id, asn1_class_to_s) if id && !universal?
+        class_name = colorize_class(type, nil, *self.attributes)
+        class_name += ':' if constructed?
+        parts << class_name
+        end_colorizer
+        "#{"  " * level}" + parts.reject(&:empty?).join(' ').to_s
       end
 
       def inspect_value
-        if value?
-          colorize(value.inspect).blue
-        else
-          colorize('(NO VALUE)').red
-        end
+        str = if value?
+                colorize_value(value.inspect)
+              else
+                colorize_nil('(NO VALUE)')
+              end
+
+        str += colorize_default(@default) if @default
+        str
       end
 
       def value_to_der
@@ -618,6 +615,8 @@ module RASN2
         elsif !@default.nil?
           @value = @default
         else
+          return true if self.instance_of?(Tag)
+
           raise_id_error(der)
         end
         false
@@ -670,18 +669,24 @@ module RASN2
 
       def raise_id_error(der)
         msg = name.nil? ? +'' : "#{name}: "
-        msg << "Expected #{self2name} but get #{der2name(der)}"
+        msg << "Expected #{self2name} but got #{der2name(der)}"
 
         raise ASN1Error, msg
       end
 
       def self2name
-        name = "#{colorize_class(asn1_class.to_s.upcase)} #{colorize_attribute(constructed? ? 'CONSTRUCTED' : 'PRIMITIVE')}"
+        parts = [asn1_class.to_s.upcase]
+        parts << (constructed? ? 'CONSTRUCTED' : 'PRIMITIVE').to_s
         if implicit? || explicit?
-          name << ' 0x%X (0x%s)' % [id, bin2hex(encode_identifier_octets)]
+          parts << '0x%X (0x%s)' % [id, bin2hex(encode_identifier_octets)]
         else
-          name << ' ' << colorize_class(self.class.type)
+          parts << self.class.type.to_s
         end
+        parts.reject(&:empty?).join(' ')
+      end
+
+      def indent(input, by=2)
+        input.split("\n").map { |line| ("  " * by) + line }.join("\n")
       end
 
       def der2name(der)
@@ -690,11 +695,12 @@ module RASN2
         asn1_class, pc, id, id_size = Types.decode_identifier_octets(der)
         name = "#{asn1_class.to_s.upcase} #{pc.to_s.upcase}"
         type =  find_type(id)
-        name << " #{type.nil? ? "#{colorize(bin2hex(der[0...id_size])).magenta}" : colorize(type.encoded_type).green}"
+        name << " #{type.nil? ? bin2hex(der[0...id_size]).to_s : type.encoded_type}"
       end
 
       def find_type(id)
         Types.constants.map { |c| Types.const_get(c) }
+             .grep(Class)
              .select { |klass| klass < Primitive || klass < Constructed }
              .find { |klass| id == klass::ID }
       end

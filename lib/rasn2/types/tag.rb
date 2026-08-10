@@ -24,7 +24,7 @@ module RASN2
     #   generic = Tag.new(tag: :private, value: [Integer.new, OctetString.new])
     #   # or equivalently
     #   generic = Tag.new(any_private: true, value: [Integer.new])
-    class Tag < Constructed
+    class Tag < Base
       # Placeholder ID — not used directly; tag is always dynamic.
       ID = 0
 
@@ -72,21 +72,6 @@ module RASN2
         end
       end
 
-      # Parse constructed content from DER
-      # @param [String] der
-      # @param [Boolean] ber
-      # @return [void]
-      def der_to_value(der, ber: false) # rubocop:disable Lint/UnusedMethodArgument
-        if @value.is_a?(Array) && !@value.empty?
-          nb_bytes = 0
-          @value.each do |element|
-            nb_bytes += element.parse!(der[nb_bytes..])
-          end
-        else
-          @value = [ RASN2.parse(der) ]
-        end
-      end
-
       private
 
       def extract_tag_binding(options)
@@ -113,6 +98,12 @@ module RASN2
       end
 
       def check_id(der)
+        asn1_class, pc, tag_id, size = Types.decode_identifier_octets(der)
+        @asn1_class = asn1_class
+        @constructed = pc
+        @tag = tag_id
+        @tag_size = size
+
         return check_any_private_id(der) if @any_private && @accepted_tags.empty?
         return check_multi_tag_id(der) if @accepted_tags.length > 1
 
@@ -122,11 +113,7 @@ module RASN2
       def check_any_private_id(der)
         return no_match(der) if der.nil? || der.empty?
 
-        first_octet = der.unpack1('C').to_i
-        asn1_class_bits = first_octet & CLASS_MASK
-        if asn1_class_bits == CLASSES[:private]
-          @asn1_class = :private
-          _, _, tag_id, = Types.decode_identifier_octets(der)
+        if asn1_class == :private
           @id_value = tag_id
           @matched_tag = tag_id
           true
