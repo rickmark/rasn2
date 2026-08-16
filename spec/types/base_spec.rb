@@ -340,12 +340,12 @@ module RASN2::Types # rubocop:disable Metrics/ModuleLength
       end
 
       it 'gives OPTIONAL information' do
-        expect(Integer.new(value: 0, optional: true).inspect).to eq('INTEGER: 0 OPTIONAL')
+        expect(Integer.new(value: 0, optional: true).inspect).to eq('INTEGER OPTIONAL: 0')
       end
 
       it 'gives DEFAULT information' do
-        expect(Integer.new(value: 0, default: 0).inspect).to eq('INTEGER: 0 DEFAULT 0')
-        expect(Integer.new(value: 1, default: 0).inspect).to eq('INTEGER: 1 DEFAULT 0')
+        expect(Integer.new(value: 0, default: 0).inspect).to eq('INTEGER: 0 DEFAULT VALUE 0')
+        expect(Integer.new(value: 1, default: 0).inspect).to eq('INTEGER: 1 DEFAULT VALUE 0')
       end
     end
 

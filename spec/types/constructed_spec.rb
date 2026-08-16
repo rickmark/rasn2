@@ -12,11 +12,11 @@ module RASN2::Types
     describe '#inspect' do
       it 'handles Array-value types' do
         seq = Sequence.new
-        expect(seq.inspect).to eq("SEQUENCE:\n")
+        expect(seq.inspect).to eq("SEQUENCE:")
         bool = Boolean.new(value: true)
         int =  Integer.new(value: 1)
         seq.value = [bool, int]
-        expect(seq.inspect).to eq("SEQUENCE:\n  #{bool.inspect}\n  #{int.inspect}\n")
+        expect(seq.inspect).to eq("SEQUENCE:\n  #{bool.inspect}\n  #{int.inspect}\n\n")
       end
 
       it 'handles name' do

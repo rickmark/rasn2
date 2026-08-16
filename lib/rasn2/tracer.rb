@@ -46,7 +46,7 @@ module RASN2
     # @return [String]
     def indent(level=nil)
       level ||= @tracing_level
-      "  " * level
+      '  ' * level
     end
   end
 

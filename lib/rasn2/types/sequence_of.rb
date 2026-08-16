@@ -105,21 +105,6 @@ module RASN2
         @value.length
       end
 
-      # @param [::Integer] level
-      # @return [String]
-      def inspect(level=0, color: false)
-        new_level = level.abs + 1
-        begin_colorizer(color)
-        name = @name ? "#{colorize_name(@name)} " : ''
-        lines = []
-        lines << "#{"  " * level}#{name}SEQUENCE OF:"
-        lines += @value.map do |item|
-          item.inspect(new_level, color: color)
-        end
-        end_colorizer
-        lines.join("\n")
-      end
-
       # Make sequence of value from +der+ string
       # @param [String] der
       # @param [::Boolean] ber

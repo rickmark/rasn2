@@ -70,6 +70,7 @@ module RASN2
       # cache_id: check versus class and 5 LSB bits
       cache_id = der.unpack1('C') & 0xdf
       klass = cache_id < Types::Base::MULTI_OCTETS_ID ? @id2types[id] : Types::Tag
+      klass = Types::Tag if asn1class == :private
       is_constructed = (pc == :constructed)
       options = { class: asn1class, constructed: is_constructed }
       options[:tag_value] = id if klass == Types::Tag

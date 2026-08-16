@@ -149,13 +149,13 @@ module RASN2
           expect(@seqof.inspect(color: false)).to eq(<<~ENDOFSEQUENCE
             SEQUENCE OF:
               SEQUENCE:
-                BOOLEAN true DEFAULT VALUE true
-                INTEGER 12
-                OCTET STRING "abcd"
+                BOOLEAN: true DEFAULT VALUE true
+                INTEGER: 12
+                OCTET STRING:" "abcd"
               SEQUENCE:
-                BOOLEAN false DEFAULT VALUE true
-                INTEGER 65534
-                OCTET STRING "nop"
+                BOOLEAN: false DEFAULT VALUE true
+                INTEGER: 65534
+                OCTET STRING: "nop"
             ENDOFSEQUENCE
           )
 

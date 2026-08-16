@@ -72,6 +72,14 @@ module RASN2
         end
       end
 
+      def der_to_value(der, ber: false)
+        @value = if constructed?
+                   [RASN2.parse(der, ber: ber)]
+                 else
+                   der
+                 end
+      end
+
       private
 
       def extract_tag_binding(options)
@@ -113,12 +121,10 @@ module RASN2
       def check_any_private_id(der)
         return no_match(der) if der.nil? || der.empty?
 
-        if asn1_class == :private
-          @id_value = tag_id
-          @matched_tag = tag_id
+        if asn1_class == :private && @any_private
           true
         else
-          no_match(der)
+          @accepted_tags.include?(tag_id)
         end
       end
 

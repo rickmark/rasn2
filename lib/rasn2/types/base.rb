@@ -274,31 +274,36 @@ module RASN2
       # @param [Integer] level
       # @return [String]
       def inspect(level=0, color: false)
-        parts = []
+        lines = []
         new_level = level.abs + 1
 
         begin_colorizer(color)
-        parts << common_inspect(level, color: color)
 
         if constructed?
-          if @value.is_a?(Array)
+          lines << common_inspect(level, color: color)
+          case @value
+          when Array
             @value.each do |value|
-              parts << "\n"
-              parts << value.inspect(new_level, color: color).to_s
+              lines << if value.is_a?(Base)
+                         value.inspect(new_level, color: color)
+                       else
+                         "#{'  ' * new_level}#{value.inspect}"
+                       end
             end
+          when Base
+            lines << "#{'  ' * new_level}#{@value.inspect(new_level, color: color)}"
           else
-            parts << "\n"
-            if @value.is_a?(Base)
-              parts << @value.inspect(new_level, color: color).to_s
-            else
-              @value.inspect.to_s
-            end
+            lines << "#{'  ' * new_level}#{@value.inspect}"
           end
         else
-          parts << inspect_value unless inspect_value.empty?
+          lines << if inspect_value.empty?
+                     common_inspect(level, color: color).to_s
+                   else
+                     "#{common_inspect(level, color: color)}: #{inspect_value}"
+                   end
         end
         end_colorizer
-        parts.reject(&:empty?).join(' ')
+        lines.reject(&:empty?).join("\n")
       end
 
       # Objects are equal if they have same class AND same DER
@@ -427,7 +432,7 @@ module RASN2
       end
 
       def pc_bit
-        if @constructed.nil?
+        if @constructed.nil? && self.class.const_defined?(:ASN1_PC)
           self.class.const_get(:ASN1_PC)
         elsif @constructed # true
           Constructed::ASN1_PC
@@ -450,7 +455,7 @@ module RASN2
         class_name += ':' if constructed?
         parts << class_name
         end_colorizer
-        "#{"  " * level}" + parts.reject(&:empty?).join(' ').to_s
+        ('  ' * level).to_s + parts.reject(&:empty?).join(' ').to_s
       end
 
       def inspect_value
@@ -677,16 +682,16 @@ module RASN2
       def self2name
         parts = [asn1_class.to_s.upcase]
         parts << (constructed? ? 'CONSTRUCTED' : 'PRIMITIVE').to_s
-        if implicit? || explicit?
-          parts << '0x%X (0x%s)' % [id, bin2hex(encode_identifier_octets)]
-        else
-          parts << self.class.type.to_s
-        end
+        parts << if implicit? || explicit?
+                   '0x%X (0x%s)' % [id, bin2hex(encode_identifier_octets)]
+                 else
+                   self.class.type.to_s
+                 end
         parts.reject(&:empty?).join(' ')
       end
 
       def indent(input, by=2)
-        input.split("\n").map { |line| ("  " * by) + line }.join("\n")
+        input.split("\n").map { |line| ('  ' * by) + line }.join("\n")
       end
 
       def der2name(der)

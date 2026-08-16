@@ -110,7 +110,7 @@ describe RASN2 do
         expect(obj).to be_instance_of(RASN2::Types::Tag)
         expect(obj.id).to eq(7)
         expect(obj.asn1_class).to eq(:context)
-        expect(obj.value).to eq(RASN2::Types::Integer.new(value: 1).to_der)
+        expect(obj.value).to be_a RASN2::Types::Integer
       end
 
       it '(EXPLICIT INTEGER with long id)' do

@@ -35,7 +35,7 @@ module RASN2
       type = Types.id2type(der)
       size = type.parse!(der, ber: ber)
 
-      if CONTAINER_CLASSES.include?(type.class) || type.constructed?
+      if (CONTAINER_CLASSES.include?(type.class) || type.constructed?) && type.value.is_a?(String)
         RASN2.tracer.tracing_level += 1 unless RASN2.tracer.nil?
         content = self.parse(type.value)
         type.value = content.is_a?(Array) ? content : [content]

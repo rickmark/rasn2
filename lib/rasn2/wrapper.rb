@@ -201,7 +201,6 @@ module RASN2
       !constructed?
     end
 
-
     private
 
     def explicit_implicit(options)

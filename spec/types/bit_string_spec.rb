@@ -129,7 +129,7 @@ module RASN2::Types # rubocop:disable Metrics/ModuleLength
 
       it 'gets inspect string' do
         bs = BitString.new(value: 'abcd', bit_length: 30)
-        expect(bs.inspect(color: color)).to eq('BIT STRING (bit length: 30): "abcd"')
+        expect(bs.inspect(color: color)).to eq('BIT STRING: (bit length: 30): "abcd"')
       end
 
       it 'gets inspect string with name' do

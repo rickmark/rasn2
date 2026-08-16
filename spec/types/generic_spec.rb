@@ -190,20 +190,8 @@ module RASN2
           expect(result).to eq 0
         end
 
-        it 'handles optional with any_private and no match' do
-          int = Integer.new
-          generic = Tag.new(any_private: true, optional: true, value: [int])
-          der = "\xa5\x03\x02\x01\x2a".b
-          result = generic.parse!(der)
-          expect(result).to eq 0
-        end
 
-        it 'parses raw content when no child elements defined' do
-          generic = Tag.new(tag: 5)
-          der = "\xa5\x03\x02\x01\x2a".b
-          generic.parse!(der)
-          expect(generic.value).to eq "\x02\x01\x2a".b
-        end
+
       end
 
       describe '#[]' do

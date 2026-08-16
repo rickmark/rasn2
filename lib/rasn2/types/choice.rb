@@ -127,12 +127,11 @@ module RASN2
       # @param [::Integer] level
       # @return [String]
       def inspect(level=0, color: true)
-        str = common_inspect(level)
-        str << if defined?(@chosen) && value?
-                 @value[@chosen].inspect(level + 1)
-               else
-                 'not chosen!'
-               end
+        if defined?(@chosen) && value?
+          "#{common_inspect(level)}:\n#{@value[@chosen].inspect(level + 1)}"
+        else
+          "#{common_inspect(level)}: not chosen!"
+        end
       end
 
       # @private Tracer private API
