@@ -77,7 +77,11 @@ module RASN2::Types
     end
 
     shared_examples :inspect do |color|
+      include RASN2::Helpers::Colorize
       let(:any) { Any.new }
+      before :each do
+        Rainbow.enabled = color
+      end
 
       it 'gets a String with NULL when value is nil' do
         expect(any.inspect(color: false)).to eq('ANY: (NO VALUE)')
@@ -85,7 +89,7 @@ module RASN2::Types
 
       it 'gets a String with real type' do
         any.value = OctetString.new(value: '1234')
-        expect(any.inspect(color: color)).to eq('ANY: OCTET STRING: "1234"')
+        expect(any.inspect(color: color)).to eq("#{colorize_class('ANY')}: #{colorize_class('OCTET STRING')}: \"1234\"")
         any.value = BitString.new(value: '1235', bit_length: 30)
         expect(any.inspect(color: color)).to eq('ANY: BIT STRING: (bit length: 30): "1235"')
         any.value = Integer.new(value: 45)

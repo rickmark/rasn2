@@ -16,22 +16,22 @@ module RASN2::Types
         bool = Boolean.new(value: true)
         int =  Integer.new(value: 1)
         seq.value = [bool, int]
-        expect(seq.inspect).to eq("SEQUENCE:\n  #{bool.inspect}\n  #{int.inspect}\n\n")
+        expect(seq.inspect).to eq("SEQUENCE:\n  #{bool.inspect}\n  #{int.inspect}")
       end
 
       it 'handles name' do
         seq = Sequence.new(name: :seq)
-        expect(seq.inspect).to eq("seq SEQUENCE:\n")
+        expect(seq.inspect).to eq("seq SEQUENCE:")
         bool = Boolean.new(name: :bool, value: true)
         seq.value = [bool]
-        expect(seq.inspect).to eq("seq SEQUENCE:\n  #{bool.inspect}\n")
+        expect(seq.inspect).to eq("seq SEQUENCE:\n  #{bool.inspect}")
       end
 
       it 'handles foreign elements' do
         seq = Sequence.new
         bs = BitString.new(value: 'abcd', bit_length: 23)
         seq.value = [bs.to_der]
-        expect(seq.inspect).to eq("SEQUENCE:\n  #{bs.to_der.inspect}\n")
+        expect(seq.inspect).to eq("SEQUENCE:\n  #{bs.to_der.inspect}")
       end
     end
   end

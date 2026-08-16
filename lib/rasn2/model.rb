@@ -637,8 +637,9 @@ module RASN2
     end
 
     # @return [String]
-    def inspect(level=0, color: true)
-      root.inspect(level, color: color, kind: type)
+    def inspect(level=0, color: false)
+      root.model = self.type if root.respond_to? :model=
+      root.inspect(level, color: color)
     end
 
     # Objects are equal if they have same class AND same DER
